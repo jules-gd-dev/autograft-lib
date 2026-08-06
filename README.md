@@ -26,8 +26,14 @@ Evaluated across **200 real-world enterprise documents** spanning 4 key scenario
 | **Duplicates Avoided (`MATCH`)** | `0` *(188 duplicates created!)* | **188 queries** | **188 Duplicates Avoided** |
 | **New Entities Created (`MERGE`)** | 742 queries | **554 queries** | Clean Deduplicated Graph |
 
-### Figure 1.1: Multi-Industry Benchmark Metrics
+### Figure 1.1: Multi-Industry Benchmark Metrics (2x2 Detailed Grid)
 ![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
+
+*Detailed Metric Breakdown:*
+- **Top-Left (Total Tokens Consumed)**: Compares total Entity Resolution API tokens spent across 200 documents (207,760 tokens for LangChain + Full LLM ER vs 0 tokens for AutoGraft).
+- **Top-Right (LLM ER API Calls)**: Evaluates total external API calls dispatched (742 calls for LangChain + Full LLM ER vs 0 calls short-circuited locally by AutoGraft).
+- **Bottom-Left (Neo4j Duplicates Avoided)**: Highlights exact graph duplicates prevented via Neo4j `MATCH` queries (188 duplicate nodes prevented).
+- **Bottom-Right (MATCH Queries by Industry)**: Industry breakdown of deduplication queries resolved locally across Legal (48), Tech (46), Insurance (47), and Finance (47).
 
 ### Figure 1.2: Cost Scaling Projection (Up to 1,000,000 Documents)
 For 1,000,000 documents, AutoGraft reduces projected LLM Entity Resolution API costs from **~$207.76** down to **~$0.00**, achieving **> 99.9% cost savings at enterprise scale**.

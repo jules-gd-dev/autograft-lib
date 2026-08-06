@@ -32,8 +32,14 @@ The macro benchmark suite evaluates **200 real-world enterprise documents** acro
 
 ### 2.2 Figure References & Analytical Charts
 
-#### Figure 1.1: Macro Enterprise RAG ER Benchmark Metrics
+#### Figure 1.1: Macro Enterprise RAG ER Benchmark Metrics (2x2 Detailed Grid)
 ![Figure 1.1: Total Tokens Consumed, LLM Calls, Duplicates Avoided, MATCH by Sector](benchmark/assets/macro_benchmark_metrics.png)
+
+*Detailed Metric Breakdown:*
+- **Top-Left (Total Tokens Consumed)**: Compares total Entity Resolution API tokens spent across 200 documents (207,760 tokens for LangChain + Full LLM ER vs 0 tokens for AutoGraft).
+- **Top-Right (LLM ER API Calls)**: Evaluates total external API calls dispatched (742 calls for LangChain + Full LLM ER vs 0 calls short-circuited locally by AutoGraft).
+- **Bottom-Left (Neo4j Duplicates Avoided)**: Highlights exact graph duplicates prevented via Neo4j `MATCH` queries (188 duplicate nodes prevented).
+- **Bottom-Right (MATCH Queries by Industry)**: Industry breakdown of deduplication queries resolved locally across Legal (48), Tech (46), Insurance (47), and Finance (47).
 
 #### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1M Documents)
 ![Figure 1.2: Linear Financial Cost Scaling Projection up to 1,000,000 Documents](benchmark/assets/macro_cost_scaling_1m.png)

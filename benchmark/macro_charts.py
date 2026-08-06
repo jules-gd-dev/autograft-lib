@@ -9,37 +9,55 @@ def generate_macro_charts(
     total_lc_calls: int, total_ag_calls: int,
     total_matches: int, total_merges: int
 ) -> None:
-    """Generates formal benchmark charts with figure numbering and standardized legends."""
+    """Generates formal benchmark charts in a 2x2 layout with rich descriptions."""
     os.makedirs("benchmark/assets", exist_ok=True)
     colors = ["#EF4444", "#10B981"]
     labels = ["LangChain + Full LLM ER", "LangChain + AutoGraft"]
 
-    # Figure 1.1: Macro Benchmark Metrics Chart
-    fig, axes = plt.subplots(1, 4, figsize=(19, 5))
-    fig.suptitle("Figure 1.1: Macro Enterprise RAG ER Benchmark Metrics (200 Docs / 4 Industries)", fontsize=14, fontweight="bold")
+    # Figure 1.1: Macro Benchmark Metrics Chart (2x2 Layout)
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle("Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (200 Docs / 4 Industries)", fontsize=15, fontweight="bold", y=0.98)
 
-    axes[0].bar(labels, [total_lc_tokens, total_ag_tokens], color=colors, width=0.5)
-    axes[0].set_title("Total Tokens Consumed", fontweight="bold")
-    axes[0].set_xlabel("Architecture Strategy", fontweight="bold")
-    axes[0].tick_params(axis='x', rotation=10)
+    # 1. Total Tokens Consumed
+    bars1 = axes[0, 0].bar(labels, [total_lc_tokens, total_ag_tokens], color=colors, width=0.45)
+    axes[0, 0].set_title("Total Tokens Consumed (100% Local Short-Circuit)", fontweight="bold")
+    axes[0, 0].set_ylabel("Tokens Consumed", fontweight="bold")
+    axes[0, 0].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars1:
+        h = bar.get_height()
+        axes[0, 0].annotate(f"{int(h):,}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    axes[1].bar(labels, [total_lc_calls, total_ag_calls], color=colors, width=0.5)
-    axes[1].set_title("LLM ER Calls", fontweight="bold")
-    axes[1].set_xlabel("Architecture Strategy", fontweight="bold")
-    axes[1].tick_params(axis='x', rotation=10)
+    # 2. LLM ER Calls
+    bars2 = axes[0, 1].bar(labels, [total_lc_calls, total_ag_calls], color=colors, width=0.45)
+    axes[0, 1].set_title("LLM ER API Calls (0 Calls Dépensés en Local)", fontweight="bold")
+    axes[0, 1].set_ylabel("Number of API Calls", fontweight="bold")
+    axes[0, 1].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars2:
+        h = bar.get_height()
+        axes[0, 1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    axes[2].bar(labels, [0, total_matches], color=colors, width=0.5)
-    axes[2].set_title("Duplicates Avoided (MATCH)", fontweight="bold")
-    axes[2].set_xlabel("Architecture Strategy", fontweight="bold")
-    axes[2].tick_params(axis='x', rotation=10)
+    # 3. Duplicates Avoided (MATCH)
+    bars3 = axes[1, 0].bar(labels, [0, total_matches], color=colors, width=0.45)
+    axes[1, 0].set_title("Neo4j Duplicates Avoided via MATCH Queries", fontweight="bold")
+    axes[1, 0].set_ylabel("Duplicates Prevented", fontweight="bold")
+    axes[1, 0].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars3:
+        h = bar.get_height()
+        axes[1, 0].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
+    # 4. MATCH Queries by Industry
     ind_names = list(industry_metrics.keys())
     match_by_ind = [industry_metrics[ind]["matches"] for ind in ind_names]
-    axes[3].bar(ind_names, match_by_ind, color="#3B82F6", width=0.55)
-    axes[3].set_title("MATCH Queries by Industry", fontweight="bold")
-    axes[3].set_xlabel("Industry Sector", fontweight="bold")
+    bars4 = axes[1, 1].bar(ind_names, match_by_ind, color="#3B82F6", width=0.5)
+    axes[1, 1].set_title("MATCH Queries Deduplication Breakdown by Industry", fontweight="bold")
+    axes[1, 1].set_xlabel("Industry Sector", fontweight="bold")
+    axes[1, 1].set_ylabel("Matched Existing Nodes", fontweight="bold")
+    axes[1, 1].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars4:
+        h = bar.get_height()
+        axes[1, 1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.savefig("benchmark/assets/macro_benchmark_metrics.png", dpi=300)
     plt.close()
 
@@ -73,7 +91,7 @@ def generate_macro_charts(
     ax.set_ylim(0, 115)
     ax.set_xlabel("Industry Sector", fontweight="bold", labelpad=10)
     ax.set_ylabel("Resolution Accuracy (%)", fontweight="bold")
-    ax.set_title("Figure 1.3: Entity Resolution Precision by Industry Sector", fontweight="bold", pad=15)
+    ax.set_title("Figure 1.3: Entity Resolution Precision by Industry Sector (100.0% Overall)", fontweight="bold", pad=15)
     ax.grid(axis="y", linestyle="--", alpha=0.5)
     for bar in bars:
         h = bar.get_height()
