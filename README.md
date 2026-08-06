@@ -26,7 +26,7 @@ Evaluated across **200 real-world enterprise documents** spanning 4 key scenario
 | **Duplicates Avoided (`MATCH`)** | `0` *(188 duplicates created!)* | **188 queries** | **188 Duplicates Avoided** |
 | **New Entities Created (`MERGE`)** | 742 queries | **554 queries** | Clean Deduplicated Graph |
 
-### Figure 1.1: Multi-Industry Benchmark Metrics (2x2 Detailed Grid)
+### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (200 Docs / 4 Industries)
 ![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
 
 *Detailed Metric Breakdown:*
@@ -35,12 +35,12 @@ Evaluated across **200 real-world enterprise documents** spanning 4 key scenario
 - **Bottom-Left (Neo4j Duplicates Avoided)**: Highlights exact graph duplicates prevented via Neo4j `MATCH` queries (188 duplicate nodes prevented).
 - **Bottom-Right (MATCH Queries by Industry)**: Industry breakdown of deduplication queries resolved locally across Legal (48), Tech (46), Insurance (47), and Finance (47).
 
-### Figure 1.2: Cost Scaling Projection (Up to 1,000,000 Documents)
+### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1,000,000 Documents)
 For 1,000,000 documents, AutoGraft reduces projected LLM Entity Resolution API costs from **~$207.76** down to **~$0.00**, achieving **> 99.9% cost savings at enterprise scale**.
 
 ![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png)
 
-### Figure 1.3: Resolution Accuracy Precision by Industry Sector
+### Figure 1.3: Entity Resolution Precision by Industry Sector (100.0% Overall)
 ![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png)
 
 *For complete evaluation methodology and dataset documentation, see [BENCHMARK.md](BENCHMARK.md).*
