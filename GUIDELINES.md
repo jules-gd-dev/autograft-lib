@@ -1,4 +1,5 @@
 # AutoGraft Development Guidelines
+
 ## Git Workflow
 - We work ONLY on the `dev` branch. Do not push to `main` directly.
 - Commits must be done for every logical change.
