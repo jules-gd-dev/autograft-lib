@@ -17,31 +17,37 @@ Stop duplicating entities in your Neo4j Knowledge Graph. AutoGraft intercepts en
 
 Evaluated across **200 real-world enterprise documents** spanning 4 key scenarios: **Legal & Compliance**, **Tech & Enterprise Software**, **Insurance & Risk Management**, and **Finance & Investment Banking** (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
 
-| Metric | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER | Improvement / Savings |
+| Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| **Processed Documents** | 200 documents | 200 documents | Standardized Baseline |
-| **Extracted Entities** | 742 entities | 742 entities | Identical Extraction Set |
-| **LLM ER API Calls** | 742 calls | **0 calls** | **100% Local Short-Circuit** |
-| **Tokens Consumed** | 207,760 tokens | **0 tokens** | **100% Token Savings** |
-| **Duplicates Avoided (`MATCH`)** | **188 queries** | **188 queries** | **Identical Graph Deduplication** |
-| **New Entities Created (`MERGE`)** | **554 queries** | **554 queries** | Clean Unified Graph |
-| **LLM Resolution Cost** | $0.04155 | **$0.00000** | 🏆 **100% Cost Reduction** |
+| **Processed Documents** | 200 documents | 200 documents | 200 documents |
+| **Extracted Entities** | 742 entities | 742 entities | 742 entities |
+| **LLM ER API Calls** | **0 calls** | 742 calls | **0 calls** *(100% Local Short-Circuit)* |
+| **Tokens Consumed** | **0 tokens** | 207,760 tokens | **0 tokens** *(100% Token Savings)* |
+| **Duplicates Created** | **188 duplicates** ⚠️ | 0 duplicates | **0 duplicates** 🏆 |
+| **Duplicates Avoided (`MATCH`)** | 0 queries | **188 queries** | **188 queries** |
+| **New Entities Created (`MERGE`)** | 742 queries | **554 queries** | **554 queries** |
+| **LLM ER Cost** | $0.00000 | $0.04155 | **$0.00000** |
+| **Knowledge Graph Quality** | ❌ Polluted with Duplicates | ✅ Deduplicated (Expensive) | 🏆 **Deduplicated & Cost-Free** |
 
-*Note: While LangChain + Full LLM ER achieves deduplication, it requires 207,760 LLM tokens and 742 API calls. AutoGraft achieves the exact same clean Knowledge Graph with 0 tokens and 0 API calls.*
+---
 
 ### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (200 Docs / 4 Industries)
 ![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
 
 *Detailed Metric Breakdown:*
-- **Top-Left (Total Tokens Consumed)**: Compares total Entity Resolution API tokens spent across 200 documents (207,760 tokens for LangChain + Full LLM ER vs 0 tokens for AutoGraft).
-- **Top-Right (LLM ER API Calls)**: Evaluates total external API calls dispatched (742 calls for LangChain + Full LLM ER vs 0 calls short-circuited locally by AutoGraft).
-- **Bottom-Left (Neo4j Duplicates Avoided)**: Highlights exact graph duplicates prevented via Neo4j `MATCH` queries (188 duplicate nodes prevented by both approaches).
+- **Top-Left (Total Tokens Consumed)**: LangChain Naive and AutoGraft consume 0 resolution tokens, while Full LLM ER consumes 207,760 tokens.
+- **Top-Right (LLM ER API Calls)**: LangChain Naive and AutoGraft make 0 API calls, while Full LLM ER makes 742 external API calls.
+- **Bottom-Left (Neo4j Duplicates Avoided)**: LangChain Naive creates 188 duplicates (0 avoided), while Full LLM ER and AutoGraft resolve all 188 duplicates.
 - **Bottom-Right (MATCH Queries by Industry)**: Industry breakdown of deduplication queries resolved locally across Legal (83), Tech (40), Insurance (35), and Finance (30).
 
+---
+
 ### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1,000,000 Documents)
-For 1,000,000 documents, AutoGraft reduces projected LLM Entity Resolution API costs from **~$207.76** down to **~$0.00**, achieving **> 99.9% cost savings at enterprise scale**.
+For 1,000,000 documents, AutoGraft maintains **$0.00** LLM Entity Resolution API costs while guaranteeing a 100% clean, deduplicated Knowledge Graph.
 
 ![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png)
+
+---
 
 ### Figure 1.3: Entity Resolution Precision by Industry Sector (100.0% Overall)
 ![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png)

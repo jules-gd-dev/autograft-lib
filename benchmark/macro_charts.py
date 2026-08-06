@@ -9,18 +9,18 @@ def generate_macro_charts(
     total_lc_calls: int, total_ag_calls: int,
     total_matches: int, total_merges: int
 ) -> None:
-    """Generates formal benchmark charts comparing LangChain + Full LLM ER vs LangChain + AutoGraft."""
+    """Generates formal benchmark charts comparing 3 strategies."""
     os.makedirs("benchmark/assets", exist_ok=True)
-    colors = ["#EF4444", "#10B981"]
-    labels = ["LangChain + Full LLM ER", "LangChain + AutoGraft"]
+    colors = ["#9CA3AF", "#EF4444", "#10B981"]
+    labels = ["LangChain Naive\n(No ER)", "LangChain +\nFull LLM ER", "LangChain +\nAutoGraft"]
 
     # Figure 1.1: Macro Benchmark Metrics Chart (2x2 Layout)
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(15, 11))
     fig.suptitle("Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (200 Docs / 4 Industries)", fontsize=15, fontweight="bold", y=0.98)
 
     # 1. Total Tokens Consumed
-    bars1 = axes[0, 0].bar(labels, [total_lc_tokens, total_ag_tokens], color=colors, width=0.45)
-    axes[0, 0].set_title("Total Tokens Consumed (100% Local Short-Circuit)", fontweight="bold")
+    bars1 = axes[0, 0].bar(labels, [0, total_lc_tokens, total_ag_tokens], color=colors, width=0.45)
+    axes[0, 0].set_title("Total Tokens Consumed", fontweight="bold")
     axes[0, 0].set_ylabel("Tokens Consumed", fontweight="bold")
     axes[0, 0].grid(axis="y", linestyle="--", alpha=0.5)
     for bar in bars1:
@@ -28,16 +28,16 @@ def generate_macro_charts(
         axes[0, 0].annotate(f"{int(h):,}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
     # 2. LLM ER Calls
-    bars2 = axes[0, 1].bar(labels, [total_lc_calls, total_ag_calls], color=colors, width=0.45)
-    axes[0, 1].set_title("LLM ER API Calls (0 Calls Dépensés en Local)", fontweight="bold")
+    bars2 = axes[0, 1].bar(labels, [0, total_lc_calls, total_ag_calls], color=colors, width=0.45)
+    axes[0, 1].set_title("LLM ER API Calls", fontweight="bold")
     axes[0, 1].set_ylabel("Number of API Calls", fontweight="bold")
     axes[0, 1].grid(axis="y", linestyle="--", alpha=0.5)
     for bar in bars2:
         h = bar.get_height()
         axes[0, 1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    # 3. Duplicates Avoided (MATCH) - Both strategies resolve 188 duplicates!
-    bars3 = axes[1, 0].bar(labels, [total_matches, total_matches], color=colors, width=0.45)
+    # 3. Duplicates Avoided (MATCH) - Naive creates 188 duplicates!
+    bars3 = axes[1, 0].bar(labels, [0, total_matches, total_matches], color=colors, width=0.45)
     axes[1, 0].set_title("Neo4j Duplicates Avoided via MATCH Queries", fontweight="bold")
     axes[1, 0].set_ylabel("Duplicates Prevented", fontweight="bold")
     axes[1, 0].grid(axis="y", linestyle="--", alpha=0.5)
@@ -68,10 +68,12 @@ def generate_macro_charts(
 
     lc_costs = [(v * lc_avg / 1_000_000) * 0.20 for v in volumes]
     ag_costs = [(v * ag_avg / 1_000_000) * 0.20 for v in volumes]
+    naive_costs = [0 for _ in volumes]
 
     fig, ax = plt.subplots(figsize=(10, 5.5))
-    ax.plot(range(len(volumes)), lc_costs, "o-", color="#EF4444", linewidth=2.5, label="LangChain + Full LLM ER")
-    ax.plot(range(len(volumes)), ag_costs, "s-", color="#10B981", linewidth=2.5, label="LangChain + AutoGraft Hybrid ER")
+    ax.plot(range(len(volumes)), naive_costs, "--", color="#9CA3AF", linewidth=2.0, label="LangChain Naive (No ER - Creates Duplicates)")
+    ax.plot(range(len(volumes)), lc_costs, "o-", color="#EF4444", linewidth=2.5, label="LangChain + Full LLM ER (Deduplicated - Expensive)")
+    ax.plot(range(len(volumes)), ag_costs, "s-", color="#10B981", linewidth=2.5, label="LangChain + AutoGraft Hybrid ER (Deduplicated - Cost-Free)")
     ax.fill_between(range(len(volumes)), lc_costs, ag_costs, color="#10B981", alpha=0.15, label="Cost Savings Region (100% Saved)")
     ax.set_xticks(range(len(volumes)))
     ax.set_xticklabels(["10", "100", "1K", "10K", "100K", "1M"], fontweight="bold")
@@ -79,7 +81,7 @@ def generate_macro_charts(
     ax.set_ylabel("Projected Cost ($ USD)", fontweight="bold")
     ax.set_title("Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1,000,000 Documents)", fontweight="bold", pad=15)
     ax.grid(True, linestyle="--", alpha=0.5)
-    ax.legend(fontsize=11, loc="upper left")
+    ax.legend(fontsize=10, loc="upper left")
     plt.tight_layout()
     plt.savefig("benchmark/assets/macro_cost_scaling_1m.png", dpi=300)
     plt.close()
