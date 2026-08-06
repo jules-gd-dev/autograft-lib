@@ -108,7 +108,7 @@ def get_sentences() -> list[str]:
 
 def run_full_stack_demo() -> None:
     """Executes the full-stack RAG pipeline demo and benchmarks LangChain Only vs LangChain + AutoGraft."""
-    model = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile")
+    model = "llama-3.1-8b-instant"
     api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     base_url = (
         "https://api.groq.com/openai/v1"
@@ -122,7 +122,7 @@ def run_full_stack_demo() -> None:
         base_url=base_url,
         temperature=0,
     )
-    transformer = LLMGraphTransformer(llm=llm)
+    transformer = LLMGraphTransformer(llm=llm, ignore_tool_usage=True)
 
     existing_nodes = build_existing_graph_nodes()
     sentences = get_sentences()
@@ -152,21 +152,24 @@ def run_full_stack_demo() -> None:
     start_time = time.time()
 
     for idx, sentence in enumerate(sentences, 1):
-        # 1. LangChain Extraction
         docs = [Document(page_content=sentence)]
-        try:
-            graph_docs = transformer.convert_to_graph_documents(docs)
-            extracted_nodes = graph_docs[0].nodes if graph_docs else []
-        except Exception:
-            extracted_nodes = []
+        extracted_nodes = []
+        for attempt in range(3):
+            try:
+                graph_docs = transformer.convert_to_graph_documents(docs)
+                extracted_nodes = graph_docs[0].nodes if graph_docs else []
+                break
+            except Exception as err:
+                if "RateLimit" in type(err).__name__ or "429" in str(err):
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                break
 
-        # 2. Benchmark Simulation for LangChain Only (Full LLM per node)
         lc_calls_sentence = len(extracted_nodes)
-        lc_tokens_sentence = lc_calls_sentence * 280  # Avg tokens per prompt with full graph context
+        lc_tokens_sentence = lc_calls_sentence * 280
         lc_calls_total += lc_calls_sentence
         lc_tokens_total += lc_tokens_sentence
 
-        # 3. AutoGraft Entity Resolution (Hybrid 3-layer short-circuiting)
         ag_calls_sentence = 0
         ag_tokens_sentence = 0
 
@@ -190,7 +193,6 @@ def run_full_stack_demo() -> None:
         report_lines.append("")
 
         print_progress(idx, total_sentences, prefix="Processing Sentences")
-        time.sleep(0.05)
 
     elapsed_time = time.time() - start_time
     PRICE_PER_1M_TOKENS = 0.20
@@ -224,7 +226,6 @@ def run_full_stack_demo() -> None:
 
     report_lines.extend(summary_block)
 
-    # Write summary report to file
     report_file_path = "examples/full_stack_demo_report.txt"
     with open(report_file_path, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
