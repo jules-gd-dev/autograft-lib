@@ -171,7 +171,7 @@ def verify_decision(
         except Exception as err:
             err_name = type(err).__name__
             if "RateLimit" in err_name or "429" in str(err):
-                time.sleep(2.5 * (attempt + 1))
+                time.sleep(1.5 * (attempt + 1))
                 continue
             return False, f"⚠️ JUDGE API ERROR ({err_name}: {err})"
 
@@ -223,7 +223,7 @@ def generate_accuracy_chart(
 
 
 def run_accuracy_benchmark() -> None:
-    """Runs the accuracy benchmark loop against the 100-case dataset."""
+    """Runs the accuracy benchmark loop against the 100-case dataset with fast execution."""
     dataset = build_tricky_dataset()
     correct_decisions = 0
     total_cases = len(dataset)
@@ -270,7 +270,6 @@ def run_accuracy_benchmark() -> None:
             f"{idx:<3} | {domain:<18} | {new_entity.canonical_name:<22} | {existing_node.canonical_name:<28} | "
             f"{decision_str:<18} | {verdict_str:<12}"
         )
-        time.sleep(2.1)  # Respect Groq 30 RPM rate limit
 
     accuracy_pct = (correct_decisions / total_cases) * 100.0
 
