@@ -6,20 +6,30 @@ AutoGraft is an Entity Resolution middleware for GraphRAG. It prevents duplicate
 ## Key Features: 
 LLM Agnostic (litellm), Cost-efficient ER, Neo4j Cypher MERGE generator, Pluggable into existing RAG pipelines, Rust-ready core.
 
+## 📊 Performance Benchmark (AutoGraft vs LangChain)
+AutoGraft reduces LLM API calls and token consumption by over **87%** by routing exact string matches to Layer 1 (Rapidfuzz) and clear vector similarities to Layer 2 (Numpy Cosine Similarity), invoking LLMs only for genuinely ambiguous entities.
+
+![Benchmark Results](benchmark/assets/benchmark_results.png)
+
 ## Installation: 
 `pip install autograft`
 
 ## Quick Start:
 ```python
-from autograft.api import AutoGraft
-from autograft.models import Entity
+from autograft import Entity, ExistingNode, resolve_and_generate_cypher
 
-# Initialize AutoGraft
-er = AutoGraft()
+# Existing Knowledge Graph node
+existing_node = ExistingNode(
+    node_id="node_1",
+    canonical_name="Apple Inc.",
+    type="Company",
+    aliases=["Apple"]
+)
 
-# Example entity extracted from an LLM
-extracted_entity = Entity(id="e1", name="Apple Inc.", type="Company")
+# New entity extracted from upstream LLM
+new_entity = Entity(canonical_name="Apple Inc.", type="Company")
 
-# Process entity using 3-layer ER
-er.process(extracted_entity)
+# Resolve & generate Neo4j Cypher query
+cypher_query = resolve_and_generate_cypher(new_entity, [existing_node])
+print(cypher_query)
 ```
