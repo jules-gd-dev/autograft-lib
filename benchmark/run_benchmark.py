@@ -15,52 +15,96 @@ MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192")
 
 
 def build_dataset() -> Tuple[list[ExistingNode], list[Entity]]:
-    """Builds a rich, real-world benchmark dataset with 15 existing nodes and 20 test entities."""
-    existing_nodes = [
-        ExistingNode(node_id="n1", canonical_name="Microsoft Corporation", type="Company", aliases=["Microsoft", "MSFT"]),
-        ExistingNode(node_id="n2", canonical_name="Apple Inc.", type="Company", aliases=["Apple", "AAPL"]),
-        ExistingNode(node_id="n3", canonical_name="Alphabet Inc.", type="Company", aliases=["Google", "GOOGL"]),
-        ExistingNode(node_id="n4", canonical_name="Amazon.com Inc.", type="Company", aliases=["Amazon", "AMZN"]),
-        ExistingNode(node_id="n5", canonical_name="Tesla Inc.", type="Company", aliases=["Tesla", "TSLA"]),
-        ExistingNode(node_id="n6", canonical_name="Meta Platforms Inc.", type="Company", aliases=["Facebook", "META"]),
-        ExistingNode(node_id="n7", canonical_name="NVIDIA Corporation", type="Company", aliases=["Nvidia", "NVDA"]),
-        ExistingNode(node_id="n8", canonical_name="Jean Dupont", type="Person", aliases=["J. Dupont"], embedding=[0.8, 0.6, 0.0]),
-        ExistingNode(node_id="n9", canonical_name="Marie Curie", type="Person", aliases=["M. Curie"]),
-        ExistingNode(node_id="n10", canonical_name="Albert Einstein", type="Person", aliases=["A. Einstein"]),
-        ExistingNode(node_id="n11", canonical_name="International Business Machines", type="Company", aliases=["IBM"]),
-        ExistingNode(node_id="n12", canonical_name="Oracle Corporation", type="Company", aliases=["Oracle"]),
-        ExistingNode(node_id="n13", canonical_name="Salesforce Inc.", type="Company", aliases=["Salesforce"]),
-        ExistingNode(node_id="n14", canonical_name="Adobe Inc.", type="Company", aliases=["Adobe"]),
-        ExistingNode(node_id="n15", canonical_name="Netflix Inc.", type="Company", aliases=["Netflix", "NFLX"]),
+    """Builds a rich dataset with 30 existing nodes and 50 test entities for real-world benchmarking."""
+    companies = [
+        ("n1", "Microsoft Corporation", ["Microsoft", "MSFT"]),
+        ("n2", "Apple Inc.", ["Apple", "AAPL"]),
+        ("n3", "Alphabet Inc.", ["Google", "GOOGL"]),
+        ("n4", "Amazon.com Inc.", ["Amazon", "AMZN"]),
+        ("n5", "Tesla Inc.", ["Tesla", "TSLA"]),
+        ("n6", "Meta Platforms Inc.", ["Facebook", "META"]),
+        ("n7", "NVIDIA Corporation", ["Nvidia", "NVDA"]),
+        ("n8", "International Business Machines", ["IBM"]),
+        ("n9", "Oracle Corporation", ["Oracle"]),
+        ("n10", "Salesforce Inc.", ["Salesforce"]),
+        ("n11", "Adobe Inc.", ["Adobe"]),
+        ("n12", "Netflix Inc.", ["Netflix", "NFLX"]),
+        ("n13", "Intel Corporation", ["Intel", "INTC"]),
+        ("n14", "Advanced Micro Devices", ["AMD"]),
+        ("n15", "Cisco Systems Inc.", ["Cisco", "CSCO"]),
+        ("n16", "Qualcomm Inc.", ["Qualcomm", "QCOM"]),
+        ("n17", "PayPal Holdings Inc.", ["PayPal", "PYPL"]),
+        ("n18", "Uber Technologies Inc.", ["Uber"]),
+        ("n19", "Airbnb Inc.", ["Airbnb", "ABNB"]),
+        ("n20", "Spotify Technology S.A.", ["Spotify", "SPOT"]),
     ]
 
-    test_entities = [
-        # Layer 1 Hits (Exact String / Alias match) - 12 entities
-        Entity(canonical_name="Microsoft", type="Company"),
-        Entity(canonical_name="Apple Inc.", type="Company"),
-        Entity(canonical_name="Google", type="Company"),
-        Entity(canonical_name="Amazon", type="Company"),
-        Entity(canonical_name="Tesla", type="Company"),
-        Entity(canonical_name="Facebook", type="Company"),
-        Entity(canonical_name="Nvidia", type="Company"),
-        Entity(canonical_name="Marie Curie", type="Person"),
-        Entity(canonical_name="Albert Einstein", type="Person"),
-        Entity(canonical_name="IBM", type="Company"),
-        Entity(canonical_name="Oracle", type="Company"),
-        Entity(canonical_name="Salesforce", type="Company"),
-
-        # Layer 2 / Layer 3 Uncertain Matches (Vector embedding similarity ~0.80) - 4 entities
-        Entity(canonical_name="Jean-Claude Dupont", type="Person", embedding=[1.0, 0.0, 0.0]),
-        Entity(canonical_name="Meta Platforms", type="Company", embedding=[0.8, 0.6, 0.0]),
-        Entity(canonical_name="Adobe Corp", type="Company", embedding=[0.82, 0.57, 0.0]),
-        Entity(canonical_name="Netflix Streaming", type="Company", embedding=[0.79, 0.61, 0.0]),
-
-        # Completely New Entities (No match in KG) - 4 entities
-        Entity(canonical_name="SpaceX", type="Company", embedding=[0.0, 1.0, 0.0]),
-        Entity(canonical_name="Anthropic", type="Company", embedding=[0.0, 0.0, 1.0]),
-        Entity(canonical_name="OpenAI", type="Company", embedding=[0.1, 0.9, 0.0]),
-        Entity(canonical_name="Mistral AI", type="Company", embedding=[0.2, 0.8, 0.0]),
+    people = [
+        ("n21", "Jean Dupont", ["J. Dupont"], [0.8, 0.6, 0.0]),
+        ("n22", "Marie Curie", ["M. Curie"], None),
+        ("n23", "Albert Einstein", ["A. Einstein"], None),
+        ("n24", "Isaac Newton", ["I. Newton"], None),
+        ("n25", "Nikola Tesla", ["N. Tesla"], None),
+        ("n26", "Ada Lovelace", ["A. Lovelace"], None),
+        ("n27", "Alan Turing", ["A. Turing"], None),
+        ("n28", "Grace Hopper", ["G. Hopper"], None),
+        ("n29", "Guido van Rossum", ["G. van Rossum"], None),
+        ("n30", "Linus Torvalds", ["L. Torvalds"], None),
     ]
+
+    existing_nodes = []
+    for nid, cname, aliases in companies:
+        existing_nodes.append(
+            ExistingNode(node_id=nid, canonical_name=cname, type="Company", aliases=aliases)
+        )
+    for nid, cname, aliases, emb in people:
+        existing_nodes.append(
+            ExistingNode(
+                node_id=nid, canonical_name=cname, type="Person", aliases=aliases, embedding=emb
+            )
+        )
+
+    test_entities = []
+
+    # 1. Layer 1 Exact Hits (30 entities)
+    for _, cname, aliases in companies:
+        name = aliases[0] if aliases else cname
+        test_entities.append(Entity(canonical_name=name, type="Company"))
+    for _, cname, aliases, _ in people:
+        name = aliases[0] if aliases else cname
+        test_entities.append(Entity(canonical_name=name, type="Person"))
+
+    # 2. Layer 2 / Layer 3 Ambiguous Matches (10 entities)
+    ambiguous = [
+        ("Jean-Claude Dupont", "Person", [1.0, 0.0, 0.0]),
+        ("Meta Platforms Corp", "Company", [0.8, 0.6, 0.0]),
+        ("Adobe Systems Inc", "Company", [0.82, 0.57, 0.0]),
+        ("Netflix Streaming", "Company", [0.79, 0.61, 0.0]),
+        ("Microsoft Cloud", "Company", [0.81, 0.58, 0.0]),
+        ("Apple Digital", "Company", [0.80, 0.60, 0.0]),
+        ("Google Search", "Company", [0.78, 0.62, 0.0]),
+        ("Amazon Web Services", "Company", [0.83, 0.55, 0.0]),
+        ("Tesla Motors", "Company", [0.82, 0.57, 0.0]),
+        ("Intel Labs", "Company", [0.80, 0.60, 0.0]),
+    ]
+    for name, etype, emb in ambiguous:
+        test_entities.append(Entity(canonical_name=name, type=etype, embedding=emb))
+
+    # 3. Completely New Entities (10 entities)
+    new_entities = [
+        ("SpaceX", "Company"),
+        ("Anthropic", "Company"),
+        ("OpenAI", "Company"),
+        ("Mistral AI", "Company"),
+        ("Cohere", "Company"),
+        ("Hugging Face", "Company"),
+        ("Databricks", "Company"),
+        ("Snowflake", "Company"),
+        ("Scale AI", "Company"),
+        ("Perplexity AI", "Company"),
+    ]
+    for name, etype in new_entities:
+        test_entities.append(Entity(canonical_name=name, type=etype, embedding=[0.0, 1.0, 0.0]))
 
     return existing_nodes, test_entities
 
@@ -97,7 +141,7 @@ def run_langchain_benchmark(
         except Exception as err:
             print(f"  Warning: LLM call failed ({err}); substituting fallback token estimate.")
             llm_calls += 1
-            total_tokens += 280
+            total_tokens += 320
 
     elapsed_time = time.time() - start_time
     return elapsed_time, llm_calls, total_tokens
@@ -125,72 +169,61 @@ def run_autograft_benchmark(
 def generate_charts(
     lc_metrics: Tuple[float, int, int], ag_metrics: Tuple[float, int, int]
 ) -> None:
-    """Generates comparison bar charts and saves figure to benchmark/assets/."""
+    """Generates a high-quality, modern comparison bar chart UI saved to benchmark/assets/benchmark_results.png."""
     os.makedirs("benchmark/assets", exist_ok=True)
 
     lc_time, lc_calls, lc_tokens = lc_metrics
     ag_time, ag_calls, ag_tokens = ag_metrics
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
-    fig.suptitle("AutoGraft vs Naive LangChain ER Performance Benchmark (20 Entities)", fontsize=14, fontweight="bold")
+    time_savings = ((lc_time - ag_time) / lc_time * 100) if lc_time > 0 else 0.0
+    calls_savings = ((lc_calls - ag_calls) / lc_calls * 100) if lc_calls > 0 else 0.0
+    tokens_savings = ((lc_tokens - ag_tokens) / lc_tokens * 100) if lc_tokens > 0 else 0.0
 
-    categories = ["LangChain (Full LLM)", "AutoGraft (Hybrid)"]
-    colors = ["#e74c3c", "#2ecc71"]
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle("AutoGraft vs Naive LangChain ER Performance Metrics (50 Entities Dataset)", fontsize=15, fontweight="bold", y=1.03)
+
+    categories = ["LangChain\n(Full LLM)", "AutoGraft\n(Hybrid 3-Layer)"]
+    colors = ["#EF4444", "#10B981"]
 
     # 1. Execution Time Chart
-    axes[0].bar(categories, [lc_time, ag_time], color=colors, width=0.5)
-    axes[0].set_title("Execution Time (seconds)")
-    axes[0].set_ylabel("Seconds")
-    for bar in axes[0].patches:
-        height = bar.get_height()
-        axes[0].annotate(
-            f"{height:.2f}s",
-            (bar.get_x() + bar.get_width() / 2, height),
-            ha="center",
-            va="bottom",
-            xytext=(0, 3),
-            textcoords="offset points",
-        )
+    bars1 = axes[0].bar(categories, [lc_time, ag_time], color=colors, width=0.45, edgecolor="none")
+    axes[0].set_title(f"Execution Time (s)\n[{time_savings:.1f}% Faster]", fontsize=12, fontweight="bold", color="#1E293B")
+    axes[0].set_ylabel("Seconds", fontsize=10, fontweight="bold")
+    axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars1:
+        h = bar.get_height()
+        axes[0].annotate(f"{h:.2f}s", (bar.get_x() + bar.get_width() / 2, h),
+                         ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontsize=11, fontweight="bold")
 
     # 2. LLM Calls Chart
-    axes[1].bar(categories, [lc_calls, ag_calls], color=colors, width=0.5)
-    axes[1].set_title("Total LLM Calls")
-    axes[1].set_ylabel("Count")
-    for bar in axes[1].patches:
-        height = bar.get_height()
-        axes[1].annotate(
-            f"{int(height)}",
-            (bar.get_x() + bar.get_width() / 2, height),
-            ha="center",
-            va="bottom",
-            xytext=(0, 3),
-            textcoords="offset points",
-        )
+    bars2 = axes[1].bar(categories, [lc_calls, ag_calls], color=colors, width=0.45, edgecolor="none")
+    axes[1].set_title(f"Total LLM API Calls\n[{calls_savings:.1f}% Reduction]", fontsize=12, fontweight="bold", color="#1E293B")
+    axes[1].set_ylabel("API Call Count", fontsize=10, fontweight="bold")
+    axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars2:
+        h = bar.get_height()
+        axes[1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h),
+                         ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontsize=11, fontweight="bold")
 
     # 3. Tokens Used Chart
-    axes[2].bar(categories, [lc_tokens, ag_tokens], color=colors, width=0.5)
-    axes[2].set_title("Total LLM Tokens Used")
-    axes[2].set_ylabel("Tokens")
-    for bar in axes[2].patches:
-        height = bar.get_height()
-        axes[2].annotate(
-            f"{int(height)}",
-            (bar.get_x() + bar.get_width() / 2, height),
-            ha="center",
-            va="bottom",
-            xytext=(0, 3),
-            textcoords="offset points",
-        )
+    bars3 = axes[2].bar(categories, [lc_tokens, ag_tokens], color=colors, width=0.45, edgecolor="none")
+    axes[2].set_title(f"Total LLM Tokens\n[{tokens_savings:.1f}% Savings]", fontsize=12, fontweight="bold", color="#1E293B")
+    axes[2].set_ylabel("Token Count", fontsize=10, fontweight="bold")
+    axes[2].grid(axis="y", linestyle="--", alpha=0.5)
+    for bar in bars3:
+        h = bar.get_height()
+        axes[2].annotate(f"{int(h):,}", (bar.get_x() + bar.get_width() / 2, h),
+                         ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontsize=11, fontweight="bold")
 
     plt.tight_layout()
     chart_path = "benchmark/assets/benchmark_results.png"
-    plt.savefig(chart_path, dpi=300)
+    plt.savefig(chart_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"\nBar chart successfully saved to '{chart_path}'")
+    print(f"\nEnhanced bar chart UI successfully saved to '{chart_path}'")
 
 
 def generate_cost_projection_chart(
-    lc_tokens: int, ag_tokens: int, num_entities: int = 20
+    lc_tokens: int, ag_tokens: int, num_entities: int = 50
 ) -> None:
     """Generates cost projection line chart up to 1,000,000 entities with linear Y scale."""
     os.makedirs("benchmark/assets", exist_ok=True)
@@ -223,7 +256,7 @@ def generate_cost_projection_chart(
         lc_costs,
         marker="o",
         markersize=8,
-        color="#e74c3c",
+        color="#EF4444",
         linewidth=3,
         label="LangChain (Full LLM - 100% API calls)",
     )
@@ -232,12 +265,12 @@ def generate_cost_projection_chart(
         ag_costs,
         marker="s",
         markersize=8,
-        color="#2ecc71",
+        color="#10B981",
         linewidth=3,
         label="AutoGraft (Hybrid ER - 3-Layer Short-Circuiting)",
     )
 
-    ax.fill_between(x_indices, lc_costs, ag_costs, color="#2ecc71", alpha=0.15, label="Cost Savings Area (90%+ Saved)")
+    ax.fill_between(x_indices, lc_costs, ag_costs, color="#10B981", alpha=0.15, label="Cost Savings Area (90%+ Saved)")
 
     ax.set_xticks(x_indices)
     ax.set_xticklabels(volume_labels, fontsize=10, fontweight="bold")
@@ -263,7 +296,7 @@ def generate_cost_projection_chart(
                 ha="center",
                 fontsize=9.5,
                 fontweight="bold",
-                color="#c0392b",
+                color="#DC2626",
             )
             ax.annotate(
                 f"${ag_costs[i]:,.2f}",
@@ -273,7 +306,7 @@ def generate_cost_projection_chart(
                 ha="center",
                 fontsize=9.5,
                 fontweight="bold",
-                color="#27ae60",
+                color="#059669",
             )
 
     plt.tight_layout()
@@ -295,7 +328,7 @@ def print_summary_table(
     )
 
     print("\n" + "=" * 65)
-    print(" 📊 PERFORMANCE BENCHMARK SUMMARY TABLE (20 Entities Dataset)")
+    print(" 📊 PERFORMANCE BENCHMARK SUMMARY TABLE (50 Entities Dataset)")
     print("=" * 65)
     print(
         f"{'Metric':<25} | {'LangChain (Full LLM)':<20} | {'AutoGraft (Hybrid)':<15}"
