@@ -14,15 +14,15 @@ AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs wh
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| **Evaluated Documents** | 200 documents | 200 documents | 200 documents |
-| **Extracted Graph Entities** | 742 entities | 742 entities | 742 entities |
-| **LLM ER API Calls** | **0 calls** | 742 calls | **0 calls** *(100% Local Short-Circuit)* |
-| **Tokens Consumed** | **0 tokens** | 207,760 tokens | **0 tokens** *(100% Token Savings)* |
-| **Duplicates Created** | **188 duplicates** | 0 duplicates | **0 duplicates** |
-| **Duplicates Avoided (`MATCH`)** | 0 queries | **188 queries** | **188 queries** |
-| **New Nodes Created (`MERGE`)** | 742 queries | **554 queries** | **554 queries** |
-| **Estimated LLM API Cost** | $0.00000 | $0.04155 | **$0.00000** |
-| **Knowledge Graph Quality** | Polluted with Duplicates | Deduplicated (Expensive) | **Deduplicated & Cost-Free** |
+| Evaluated Documents | 200 documents | 200 documents | 200 documents |
+| Extracted Graph Entities | 742 entities | 742 entities | 742 entities |
+| LLM ER API Calls | 0 calls | 742 calls | 0 calls *(100% Local Short-Circuit)* |
+| Tokens Consumed | 0 tokens | 207,760 tokens | 0 tokens *(100% Token Savings)* |
+| Duplicates Created | 188 duplicates | 0 duplicates | 0 duplicates |
+| Duplicates Avoided (`MATCH`) | 0 queries | 188 queries | 188 queries |
+| New Nodes Created (`MERGE`) | 742 queries | 554 queries | 554 queries |
+| Estimated LLM API Cost | $0.00000 | $0.04155 | $0.00000 |
+| Knowledge Graph Quality | Polluted with Duplicates | Deduplicated (Expensive) | Deduplicated & Cost-Free |
 
 ---
 

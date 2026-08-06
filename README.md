@@ -21,15 +21,15 @@ Evaluated across **200 real-world enterprise documents** spanning 4 key scenario
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| **Processed Documents** | 200 documents | 200 documents | 200 documents |
-| **Extracted Entities** | 742 entities | 742 entities | 742 entities |
-| **LLM ER API Calls** | **0 calls** | 742 calls | **0 calls** *(100% Local Short-Circuit)* |
-| **Tokens Consumed** | **0 tokens** | 207,760 tokens | **0 tokens** *(100% Token Savings)* |
-| **Duplicates Created** | **188 duplicates** | 0 duplicates | **0 duplicates** |
-| **Duplicates Avoided (`MATCH`)** | 0 queries | **188 queries** | **188 queries** |
-| **New Entities Created (`MERGE`)** | 742 queries | **554 queries** | **554 queries** |
-| **LLM ER Cost** | $0.00000 | $0.04155 | **$0.00000** |
-| **Knowledge Graph Quality** | Polluted with Duplicates | Deduplicated (Expensive) | **Deduplicated & Cost-Free** |
+| Processed Documents | 200 documents | 200 documents | 200 documents |
+| Extracted Entities | 742 entities | 742 entities | 742 entities |
+| LLM ER API Calls | 0 calls | 742 calls | 0 calls *(100% Local Short-Circuit)* |
+| Tokens Consumed | 0 tokens | 207,760 tokens | 0 tokens *(100% Token Savings)* |
+| Duplicates Created | 188 duplicates | 0 duplicates | 0 duplicates |
+| Duplicates Avoided (`MATCH`) | 0 queries | 188 queries | 188 queries |
+| New Entities Created (`MERGE`) | 742 queries | 554 queries | 554 queries |
+| LLM ER Cost | $0.00000 | $0.04155 | $0.00000 |
+| Knowledge Graph Quality | Polluted with Duplicates | Deduplicated (Expensive) | Deduplicated & Cost-Free |
 
 ---
 
