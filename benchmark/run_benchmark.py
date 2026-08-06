@@ -198,7 +198,7 @@ def generate_charts(
 def generate_cost_projection_chart(
     lc_tokens: int, ag_tokens: int, num_entities: int = 5
 ) -> None:
-    """Generates cost projection line chart up to 1,000,000 entities."""
+    """Generates cost projection line chart up to 1,000,000 entities with linear Y scale."""
     os.makedirs("benchmark/assets", exist_ok=True)
 
     lc_avg_tokens = lc_tokens / num_entities
@@ -212,6 +212,7 @@ def generate_cost_projection_chart(
     print(f"  AutoGraft (10% LLM rate):  {ag_projected_tokens_per_entity:.1f} tokens/entity")
 
     data_volumes = [10, 100, 1_000, 10_000, 100_000, 1_000_000]
+    volume_labels = ["10", "100", "1,000", "10,000", "100,000", "1,000,000"]
     PRICE_PER_MILLION_TOKENS = 0.20  # $0.20 per 1M tokens
 
     lc_costs = [
@@ -223,54 +224,69 @@ def generate_cost_projection_chart(
         for vol in data_volumes
     ]
 
-    plt.figure(figsize=(9, 5))
-    plt.plot(
-        data_volumes,
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    x_indices = list(range(len(volume_labels)))
+
+    # Plot lines with discrete X spacing for maximum clarity
+    ax.plot(
+        x_indices,
         lc_costs,
         marker="o",
+        markersize=8,
         color="#e74c3c",
-        linewidth=2.5,
-        label="LangChain (Full LLM)",
+        linewidth=3,
+        label="LangChain (Full LLM - 100% API calls)",
     )
-    plt.plot(
-        data_volumes,
+    ax.plot(
+        x_indices,
         ag_costs,
         marker="s",
+        markersize=8,
         color="#2ecc71",
-        linewidth=2.5,
-        label="AutoGraft (Hybrid ER)",
+        linewidth=3,
+        label="AutoGraft (Hybrid ER - 10% API calls)",
     )
 
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("Processed Entities (Log Scale)", fontsize=11, fontweight="bold")
-    plt.ylabel("Projected Cost in USD ($) (Log Scale)", fontsize=11, fontweight="bold")
-    plt.title(
-        "Projected LLM Cost at Scale (Up to 1M Entities)",
-        fontsize=13,
+    # Shade the savings region
+    ax.fill_between(x_indices, lc_costs, ag_costs, color="#2ecc71", alpha=0.15, label="Cost Savings Area (98%+ Saved)")
+
+    ax.set_xticks(x_indices)
+    ax.set_xticklabels(volume_labels, fontsize=10, fontweight="bold")
+    ax.set_xlabel("Processed Entities Count", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Projected Cost (USD $)", fontsize=12, fontweight="bold")
+    ax.set_title(
+        "LLM Cost Scaling: LangChain vs AutoGraft (Up to 1M Entities)",
+        fontsize=14,
         fontweight="bold",
+        pad=15,
     )
-    plt.grid(True, which="both", linestyle="--", alpha=0.5)
-    plt.legend(fontsize=11)
+    ax.grid(True, linestyle="--", alpha=0.6)
+    ax.legend(fontsize=11, loc="upper left")
 
-    for i, vol in enumerate(data_volumes):
+    # Annotate price points
+    for i in range(len(data_volumes)):
+        vol = data_volumes[i]
         if vol >= 1000:
-            plt.annotate(
-                f"${lc_costs[i]:.2f}",
-                (vol, lc_costs[i]),
+            # LangChain annotation
+            ax.annotate(
+                f"${lc_costs[i]:,.2f}",
+                (x_indices[i], lc_costs[i]),
                 textcoords="offset points",
-                xytext=(0, 8),
+                xytext=(0, 10),
                 ha="center",
-                fontsize=9,
+                fontsize=9.5,
+                fontweight="bold",
                 color="#c0392b",
             )
-            plt.annotate(
-                f"${ag_costs[i]:.2f}",
-                (vol, ag_costs[i]),
+            # AutoGraft annotation
+            ax.annotate(
+                f"${ag_costs[i]:,.2f}",
+                (x_indices[i], ag_costs[i]),
                 textcoords="offset points",
-                xytext=(0, -14),
+                xytext=(0, -16),
                 ha="center",
-                fontsize=9,
+                fontsize=9.5,
+                fontweight="bold",
                 color="#27ae60",
             )
 
@@ -278,7 +294,7 @@ def generate_cost_projection_chart(
     chart_path = "benchmark/assets/cost_projection.png"
     plt.savefig(chart_path, dpi=300)
     plt.close()
-    print(f"Cost projection chart successfully saved to '{chart_path}'")
+    print(f"Improved cost projection chart successfully saved to '{chart_path}'")
 
 
 def print_summary_table(
