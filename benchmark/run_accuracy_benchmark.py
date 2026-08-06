@@ -143,8 +143,11 @@ def verify_decision(
     entity_b_name: str,
     autograft_decision: bool,
     judge_model: str = JUDGE_MODEL,
-) -> bool:
-    """Uses a Judge LLM to verify if AutoGraft's entity resolution decision is correct."""
+) -> Tuple[bool, str]:
+    """Uses a Judge LLM to verify if AutoGraft's entity resolution decision is correct.
+
+    Returns (is_correct, status_reason_message). Does NOT default to True on error.
+    """
     prompt = (
         f"An AI system decided if Entity A ('{entity_a_name}') and Entity B ('{entity_b_name}') "
         f"are the same real-world entity.\n"
@@ -158,10 +161,12 @@ def verify_decision(
             messages=[{"role": "user", "content": prompt}],
         )
         content = str(response.choices[0].message.content).strip().upper()
-        return "YES" in content
-    except Exception:
-        # Fallback heuristic if Judge LLM encounters rate limit or network error
-        return True
+        if "YES" in content:
+            return True, "✅ CORRECT"
+        return False, "❌ INCORRECT"
+    except Exception as err:
+        # Strict failure on API/retrieval error to prevent inflating benchmark accuracy
+        return False, f"⚠️ JUDGE API ERROR ({type(err).__name__}: {err})"
 
 
 def run_accuracy_benchmark() -> None:
@@ -170,16 +175,16 @@ def run_accuracy_benchmark() -> None:
     correct_decisions = 0
     total_cases = len(dataset)
 
-    print("=" * 85)
+    print("=" * 95)
     print(f" 🎯 AUTOGRAFT ACCURACY BENCHMARK (LLM-AS-A-JUDGE AUDIT - {total_cases} DIVERSIFIED CASES)")
-    print("=" * 85)
+    print("=" * 95)
     print(f"AutoGraft Model : {AUTOGRAFT_MODEL}")
     print(f"Judge LLM Model : {JUDGE_MODEL}\n")
 
     print(
-        f"{'#':<3} | {'Entity A':<22} | {'Entity B':<32} | {'AutoGraft Decision':<18} | {'Judge Verdict':<12}"
+        f"{'#':<3} | {'Entity A':<22} | {'Entity B':<32} | {'AutoGraft Decision':<18} | {'Judge Verdict':<20}"
     )
-    print("-" * 92)
+    print("-" * 105)
 
     for idx, (new_entity, existing_node, expected) in enumerate(dataset, 1):
         # Run AutoGraft arbitration
@@ -187,7 +192,7 @@ def run_accuracy_benchmark() -> None:
         decision = result.is_match
 
         # Judge verification
-        is_correct = verify_decision(
+        is_correct, verdict_str = verify_decision(
             new_entity.canonical_name,
             existing_node.canonical_name,
             decision,
@@ -198,19 +203,18 @@ def run_accuracy_benchmark() -> None:
             correct_decisions += 1
 
         decision_str = "MATCH (True)" if decision else "NO MATCH (False)"
-        verdict_str = "✅ CORRECT" if is_correct else "❌ INCORRECT"
 
         print(
             f"{idx:<3} | {new_entity.canonical_name:<22} | {existing_node.canonical_name:<32} | "
-            f"{decision_str:<18} | {verdict_str:<12}"
+            f"{decision_str:<18} | {verdict_str:<20}"
         )
 
     accuracy_pct = (correct_decisions / total_cases) * 100.0
-    print("-" * 92)
+    print("-" * 105)
     print(
         f"🏆 Final Audit Score : {correct_decisions}/{total_cases} ({accuracy_pct:.1f}% Accuracy)"
     )
-    print("=" * 85 + "\n")
+    print("=" * 95 + "\n")
 
 
 if __name__ == "__main__":
