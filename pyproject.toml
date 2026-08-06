@@ -44,3 +44,6 @@ Issues = "https://github.com/jules-gd-dev/autograft-lib/issues"
 
 [tool.setuptools.packages.find]
 include = ["autograft", "autograft.*"]
+
+[tool.mypy]
+ignore_missing_imports = true
