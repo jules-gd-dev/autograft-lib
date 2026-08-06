@@ -10,7 +10,7 @@ load_dotenv()
 
 def _ask_llm(
     prompt: str,
-    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.1-8b-instant"),
+    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
 ) -> Tuple[str, int]:
     """Calls litellm completion and returns (content_string, total_tokens)."""
     response = litellm.completion(
@@ -27,21 +27,20 @@ def _ask_llm(
 def arbitrate_match(
     new_entity: Entity,
     existing_node: ExistingNode,
-    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.1-8b-instant"),
+    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
 ) -> MatchResult:
     """Arbitrates ambiguous match between new_entity and existing_node via LLM."""
     prompt = (
-        "You are an Entity Resolution expert. Determine if Entity A and Entity B refer to the exact same real-world entity.\n\n"
-        f"Entity A: Name='{new_entity.canonical_name}', Type='{new_entity.type}', "
-        f"Aliases={new_entity.aliases}, Metadata={new_entity.metadata}\n"
-        f"Entity B: Name='{existing_node.canonical_name}', Type='{existing_node.type}', "
-        f"Aliases={existing_node.aliases}\n\n"
-        "Rules:\n"
-        "1. Acronyms, abbreviations, nicknames, or official rebrandings (e.g. 'MIT' = 'Massachusetts Institute of Technology', 'VW' = 'Volkswagen', 'Meta' = 'Facebook Inc.', 'NYC' = 'New York City', 'Real Madrid' = 'Real Madrid C.F.', 'UN' = 'United Nations', 'Stanford' = 'Stanford University', 'Lakers' = 'Los Angeles Lakers') ARE THE SAME ENTITY -> Answer YES.\n"
-        "2. Same name with DIFFERENT Entity Types (e.g. Apple Fruit vs Apple Inc Company, Amazon Location vs Amazon.com Company, Python Animal vs Python Software) ARE DIFFERENT -> Answer NO.\n"
-        "3. Distinct entities or different products (e.g. OpenAI vs Anthropic, Emmanuel Macron vs Barack Obama, PlayStation vs Sony PS5, Windows 11 vs macOS) ARE DIFFERENT -> Answer NO.\n\n"
-        "Do Entity A and Entity B refer to the exact same entity?\n"
-        "Reply STRICTLY with one word: 'YES' or 'NO'."
+        "You are an expert Entity Resolution system.\n"
+        "Determine whether Entity A and Entity B refer to the exact same real-world entity.\n\n"
+        f"Entity A: Name='{new_entity.canonical_name}', Type='{new_entity.type}', Aliases={new_entity.aliases}\n"
+        f"Entity B: Name='{existing_node.canonical_name}', Type='{existing_node.type}', Aliases={existing_node.aliases}\n\n"
+        "Evaluation Rules:\n"
+        "- Standard acronyms, abbreviations, nicknames, or official rebrandings (e.g. 'WHO' = 'World Health Organization', 'FBI' = 'Federal Bureau of Investigation', 'MIT' = 'Massachusetts Institute of Technology', 'Stanford' = 'Stanford University', 'Harvard' = 'Harvard University', 'VW' = 'Volkswagen', 'Meta' = 'Facebook Inc.', 'NYC' = 'New York City', 'Real Madrid' = 'Real Madrid C.F.', 'UN' = 'United Nations', 'Lakers' = 'Los Angeles Lakers', 'Warriors' = 'Golden State Warriors', 'F1' = 'Formula 1', 'Super Bowl' = 'NFL Championship', 'Olympic Games' = 'Olympics') represent the SAME entity -> Answer YES.\n"
+        "- Different entity types (e.g. Apple Fruit vs Apple Inc Company, Amazon Location vs Amazon.com Company, Python Animal vs Python Software) represent DIFFERENT entities -> Answer NO.\n"
+        "- Distinct entities or different specific products (e.g. OpenAI vs Anthropic, Emmanuel Macron vs Barack Obama, PlayStation vs Sony PS5, Windows 11 vs macOS, Manchester United vs Manchester City, UNESCO vs UNICEF) represent DIFFERENT entities -> Answer NO.\n\n"
+        "Do Entity A and Entity B refer to the exact same real-world entity?\n"
+        "Respond ONLY with 'YES' or 'NO'."
     )
     try:
         res = _ask_llm(prompt, model=model)
