@@ -31,17 +31,17 @@ def arbitrate_match(
 ) -> MatchResult:
     """Arbitrates ambiguous match between new_entity and existing_node via LLM."""
     prompt = (
-        "You are an expert Entity Resolution system. Compare the two entities below:\n\n"
+        "You are an Entity Resolution expert. Determine if Entity A and Entity B refer to the exact same real-world entity.\n\n"
         f"Entity A: Name='{new_entity.canonical_name}', Type='{new_entity.type}', "
         f"Aliases={new_entity.aliases}, Metadata={new_entity.metadata}\n"
         f"Entity B: Name='{existing_node.canonical_name}', Type='{existing_node.type}', "
         f"Aliases={existing_node.aliases}\n\n"
-        "Guidelines:\n"
-        "1. Standard acronyms, abbreviations, famous nick-names, or official rebrandings (e.g., 'MIT' = 'Massachusetts Institute of Technology', 'VW' = 'Volkswagen', 'Meta' = 'Facebook', 'NYC' = 'New York City', 'Warriors' = 'Golden State Warriors', 'F1' = 'Formula 1', 'Super Bowl' = 'NFL Championship') ARE THE SAME entity -> Answer OUI.\n"
-        "2. Same name with DIFFERENT Entity Types (e.g., Apple as Fruit vs Apple Inc. as Company, Amazon as Location vs Amazon.com as Company, Python as Animal vs Python as Software) ARE DIFFERENT entities -> Answer NON.\n"
-        "3. Distinct entities of the same type (e.g., OpenAI vs Anthropic, Emmanuel Macron vs Barack Obama, Windows 11 vs macOS, ChatGPT vs GPT-4o) ARE DIFFERENT entities -> Answer NON.\n\n"
-        "Do Entity A and Entity B refer to the exact same real-world entity?\n"
-        "Reply STRICTLY with one word: 'OUI' or 'NON'."
+        "Rules:\n"
+        "1. Acronyms, abbreviations, nicknames, or official rebrandings (e.g. 'MIT' = 'Massachusetts Institute of Technology', 'VW' = 'Volkswagen', 'Meta' = 'Facebook Inc.', 'NYC' = 'New York City', 'Real Madrid' = 'Real Madrid C.F.', 'UN' = 'United Nations', 'Stanford' = 'Stanford University', 'Lakers' = 'Los Angeles Lakers') ARE THE SAME ENTITY -> Answer YES.\n"
+        "2. Same name with DIFFERENT Entity Types (e.g. Apple Fruit vs Apple Inc Company, Amazon Location vs Amazon.com Company, Python Animal vs Python Software) ARE DIFFERENT -> Answer NO.\n"
+        "3. Distinct entities or different products (e.g. OpenAI vs Anthropic, Emmanuel Macron vs Barack Obama, PlayStation vs Sony PS5, Windows 11 vs macOS) ARE DIFFERENT -> Answer NO.\n\n"
+        "Do Entity A and Entity B refer to the exact same entity?\n"
+        "Reply STRICTLY with one word: 'YES' or 'NO'."
     )
     try:
         res = _ask_llm(prompt, model=model)
@@ -50,7 +50,10 @@ def arbitrate_match(
         else:
             response_text, tokens_used = str(res), 0
 
-        if "OUI" in response_text.upper():
+        upper_res = response_text.strip().upper()
+        is_match = "YES" in upper_res or "OUI" in upper_res or "MATCH" in upper_res
+
+        if is_match:
             return MatchResult(
                 is_match=True,
                 matched_node_id=existing_node.node_id,

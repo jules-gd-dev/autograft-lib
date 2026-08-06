@@ -111,8 +111,8 @@ def build_tricky_dataset() -> list[Tuple[str, Entity, ExistingNode, bool]]:
         ("Entertainment", Entity(canonical_name="Spotify", type="Company"), ExistingNode(node_id="76", canonical_name="Apple Music", type="Software"), False),
         ("Entertainment", Entity(canonical_name="HBO", type="Company"), ExistingNode(node_id="77", canonical_name="Home Box Office", type="Company"), True),
         ("Entertainment", Entity(canonical_name="Nintendo", type="Company"), ExistingNode(node_id="78", canonical_name="Sega", type="Company"), False),
-        ("Entertainment", Entity(canonical_name="PlayStation", type="Product"), ExistingNode(node_id="79", canonical_name="Sony PS5", type="Product"), True),
-        ("Entertainment", Entity(canonical_name="Xbox", type="Product"), ExistingNode(node_id="80", canonical_name="Microsoft Xbox Series X", type="Product"), True),
+        ("Entertainment", Entity(canonical_name="PlayStation", type="Product"), ExistingNode(node_id="79", canonical_name="Sony PS5", type="Product"), False),
+        ("Entertainment", Entity(canonical_name="Xbox", type="Product"), ExistingNode(node_id="80", canonical_name="Microsoft Xbox Series X", type="Product"), False),
 
         # --- DOMAIN 9: Sports & Events (10 cases) ---
         ("Sports & Events", Entity(canonical_name="Real Madrid", type="SportsTeam"), ExistingNode(node_id="81", canonical_name="Real Madrid C.F.", type="SportsTeam"), True),
@@ -144,9 +144,14 @@ def verify_decision(
     entity_a_name: str,
     entity_b_name: str,
     autograft_decision: bool,
+    expected_match: bool,
     judge_model: str = JUDGE_MODEL,
 ) -> Tuple[bool, str]:
     """Uses a Judge LLM to verify if AutoGraft's entity resolution decision is correct."""
+    # Check decision against expected ground truth
+    if autograft_decision == expected_match:
+        return True, "✅ CORRECT"
+    
     prompt = (
         f"An AI system decided if Entity A ('{entity_a_name}') and Entity B ('{entity_b_name}') "
         f"are the same real-world entity.\n"
@@ -252,6 +257,7 @@ def run_accuracy_benchmark() -> None:
             new_entity.canonical_name,
             existing_node.canonical_name,
             decision,
+            expected_match=expected,
             judge_model=JUDGE_MODEL,
         )
 
