@@ -8,7 +8,7 @@ This document provides technical documentation of the evaluation methodology, da
 
 AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs while achieving **100% token cost reduction** on Entity Resolution tasks. Across a macro suite of **200 real-world enterprise documents** spanning 4 key industries, AutoGraft processed 742 extracted entities without invoking a single unnecessary LLM Entity Resolution API call.
 
-| Metric | LangChain Naive (100% LLM) | AutoGraft Hybrid ER | Performance Delta |
+| Metric | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER | Performance Delta |
 | :--- | :---: | :---: | :---: |
 | **Evaluated Documents** | 200 documents | 200 documents | Standardized Baseline |
 | **Extracted Graph Entities** | 742 entities | 742 entities | Identical Extraction Set |
