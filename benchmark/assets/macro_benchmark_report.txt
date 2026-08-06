@@ -1,0 +1,15 @@
+=========================================================================
+ 🚀 MACRO ENTERPRISE RAG BENCHMARK REPORT (4 INDUSTRIES / 200 DOCS)
+=========================================================================
+Total Processed Documents   : 200
+Total Extracted Entities    : 742
+LangChain LLM ER Calls      : 742 calls
+AutoGraft LLM ER Calls      : 0 calls (100% Local Short-Circuiting)
+Duplicates Avoided (MATCH)  : 188 queries
+New Entities Created (MERGE): 554 queries
+Tokens Consumed (LangChain) : 207,760 tokens
+Tokens Consumed (AutoGraft) : 0 tokens (100% Savings)
+Estimated Cost (LangChain)  : $0.04155
+Estimated Cost (AutoGraft)  : $0.00000
+Execution Time              : 2189.67 seconds
+=========================================================================
