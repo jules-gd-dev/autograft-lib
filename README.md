@@ -17,6 +17,8 @@ Stop duplicating entities in your Neo4j Knowledge Graph. AutoGraft intercepts en
 
 Evaluated across **200 real-world enterprise documents** spanning 4 key scenarios: **Legal & Compliance**, **Tech & Enterprise Software**, **Insurance & Risk Management**, and **Finance & Investment Banking** (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
 
+*LLM Engine Configured*: **`groq/llama-3.1-8b-instant`** for extraction & arbitration, and **`groq/llama-3.3-70b-versatile`** for precision auditing.
+
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
 | **Processed Documents** | 200 documents | 200 documents | 200 documents |

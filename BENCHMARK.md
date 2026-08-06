@@ -8,6 +8,10 @@ This document provides technical documentation of the evaluation methodology, da
 
 AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs while achieving **100% token cost reduction** on Entity Resolution tasks. Across a macro suite of **200 real-world enterprise documents** spanning 4 key industries, AutoGraft processed 742 extracted entities without invoking a single unnecessary LLM Entity Resolution API call.
 
+*LLM Engine Infrastructure*:
+- **Extraction & ER Layer**: `groq/llama-3.1-8b-instant`
+- **Precision Audit Judge**: `groq/llama-3.3-70b-versatile`
+
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
 | **Evaluated Documents** | 200 documents | 200 documents | 200 documents |
@@ -53,7 +57,7 @@ The macro benchmark suite evaluates **200 real-world enterprise documents** acro
 
 ## 3. Accuracy Audit (LLM-as-a-Judge)
 
-To ensure zero loss in entity resolution precision, an independent LLM-as-a-Judge (`llama-3.3-70b-versatile`) audited 550 tricky entity pairs across 11 domains (Tech, Products, People, Homonyms, Geography, Automotive, Finance, Entertainment, Sports, Institutions, Law & Legal).
+To ensure zero loss in entity resolution precision, an independent LLM-as-a-Judge (`groq/llama-3.3-70b-versatile`) audited 550 tricky entity pairs across 11 domains (Tech, Products, People, Homonyms, Geography, Automotive, Finance, Entertainment, Sports, Institutions, Law & Legal).
 
 - **Overall Precision Score**: **550/550 (100.0% Precision)**
 - **Audit Log File**: `benchmark/assets/macro_audit_summary.json`
