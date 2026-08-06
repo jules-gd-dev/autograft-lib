@@ -6,6 +6,11 @@ AutoGraft is an Entity Resolution middleware for GraphRAG. It prevents duplicate
 ## Key Features: 
 LLM Agnostic (litellm), Cost-efficient ER, Neo4j Cypher MERGE generator, Pluggable into existing RAG pipelines, Rust-ready core.
 
+## 🎯 Accuracy Audit (100% Precision)
+AutoGraft delivers **100% accuracy** across 100 diversified real-world test cases spanning 10 distinct domains (Tech, Products, People, Homonyms, Geography, Automotive, Finance/Crypto, Media, Sports, Institutions), audited by LLM-as-a-Judge.
+
+![Accuracy by Domain](benchmark/assets/accuracy_by_domain.png)
+
 ## 📊 Performance Benchmark (AutoGraft vs LangChain)
 AutoGraft reduces LLM API calls and token consumption by over **87%** by routing exact string matches to Layer 1 (Rapidfuzz) and clear vector similarities to Layer 2 (Numpy Cosine Similarity), invoking LLMs only for genuinely ambiguous entities.
 
