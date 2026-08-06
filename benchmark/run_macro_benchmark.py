@@ -41,7 +41,7 @@ def run_macro_benchmark() -> None:
     total_docs = len(documents)
 
     print("=" * 95)
-    print(f" 🚀 MACRO ENTERPRISE RAG BENCHMARK (200 DOCS / 4 INDUSTRIES / {len(existing_nodes)} KG NODES)")
+    print(f" MACRO ENTERPRISE RAG BENCHMARK (200 DOCS / 4 INDUSTRIES / {len(existing_nodes)} KG NODES)")
     print("=" * 95)
 
     lc_tokens_total, ag_tokens_total, lc_calls_total, ag_calls_total = 0, 0, 0, 0
@@ -107,7 +107,7 @@ def run_macro_benchmark() -> None:
 
     report_lines = [
         "=========================================================================",
-        " 🚀 MACRO ENTERPRISE RAG BENCHMARK REPORT (4 INDUSTRIES / 200 DOCS)",
+        " MACRO ENTERPRISE RAG BENCHMARK REPORT (4 INDUSTRIES / 200 DOCS)",
         "=========================================================================",
         f"Total Processed Documents   : {total_docs}",
         f"Total Extracted Entities    : {lc_calls_total}",
@@ -127,7 +127,7 @@ def run_macro_benchmark() -> None:
         f.write("\n".join(report_lines))
 
     print("\n\n" + "\n".join(report_lines))
-    print(f"📄 Macro audit JSON and charts saved in 'benchmark/assets/'")
+    print(f"Macro audit JSON and charts saved in 'benchmark/assets/'")
 
 
 if __name__ == "__main__":
