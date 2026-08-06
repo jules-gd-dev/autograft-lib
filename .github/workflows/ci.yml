@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install rapidfuzz numpy pydantic neo4j litellm langchain-openai langchain-community langchain-experimental llama-index-core llama-index-graph-stores-neo4j
+        
+    - name: Run tests with pytest
+      env:
+        PYTHONPATH: .
+      run: |
+        pytest tests/ -v --cov=autograft --cov-fail-under=97
