@@ -1,5 +1,6 @@
 """Accuracy Benchmark using LLM-as-a-Judge to audit AutoGraft entity resolution decisions."""
 import os
+import sys
 import time
 from typing import Tuple
 from dotenv import load_dotenv
@@ -13,6 +14,17 @@ load_dotenv()
 
 AUTOGRAFT_MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile")
 JUDGE_MODEL = os.getenv("JUDGE_LLM_MODEL", "groq/llama-3.3-70b-versatile")
+
+
+def print_progress(current: int, total: int, prefix: str = "Progress", length: int = 35) -> None:
+    """Displays a clean animated ASCII progress bar in the terminal."""
+    percent = (current / total) * 100.0
+    filled = int(length * current // total)
+    bar = "█" * filled + "░" * (length - filled)
+    sys.stdout.write(f"\r{prefix} |{bar}| {current}/{total} ({percent:.1f}%)")
+    sys.stdout.flush()
+    if current == total:
+        sys.stdout.write("\n")
 
 
 def generate_domain_datasets() -> dict[str, list[Tuple[Entity, ExistingNode, bool]]]:
@@ -432,7 +444,7 @@ def generate_accuracy_chart(
 
 
 def run_accuracy_benchmark() -> None:
-    """Runs the accuracy benchmark loop against the 550-case interleaved dataset."""
+    """Runs the accuracy benchmark loop with an animated terminal progress bar."""
     dataset = build_tricky_dataset()
     correct_decisions = 0
     total_cases = len(dataset)
@@ -447,11 +459,6 @@ def run_accuracy_benchmark() -> None:
     print("=" * 95)
     print(f"AutoGraft Model : {AUTOGRAFT_MODEL}")
     print(f"Judge LLM Model : {JUDGE_MODEL}\n")
-
-    print(
-        f"{'#':<4} | {'Domain':<18} | {'Entity A':<22} | {'Entity B':<28} | {'AutoGraft Decision':<18} | {'Judge Verdict':<12}"
-    )
-    print("-" * 112)
 
     for idx, (domain, new_entity, existing_node, expected) in enumerate(dataset, 1):
         domain_counts[domain] = domain_counts.get(domain, 0) + 1
@@ -473,12 +480,8 @@ def run_accuracy_benchmark() -> None:
             correct_decisions += 1
             domain_correct[domain] = domain_correct.get(domain, 0) + 1
 
-        decision_str = "MATCH (True)" if decision else "NO MATCH (False)"
-
-        print(
-            f"{idx:<4} | {domain:<18} | {new_entity.canonical_name:<22} | {existing_node.canonical_name:<28} | "
-            f"{decision_str:<18} | {verdict_str:<12}"
-        )
+        # Update animated progress bar
+        print_progress(idx, total_cases, prefix="🎯 Auditing Cases")
 
     accuracy_pct = (correct_decisions / total_cases) * 100.0
 
@@ -489,7 +492,7 @@ def run_accuracy_benchmark() -> None:
 
     generate_accuracy_chart(domain_scores, accuracy_pct)
 
-    print("-" * 112)
+    print("\n" + "-" * 95)
     print(
         f"🏆 Final Audit Score : {correct_decisions}/{total_cases} ({accuracy_pct:.1f}% Accuracy)"
     )

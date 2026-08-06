@@ -50,7 +50,7 @@ def arbitrate_match(
         f"Entity B: Name='{existing_node.canonical_name}', Type='{existing_node.type}'{node_aliases_str}\n\n"
         "Do Entity A and Entity B refer to the exact same real-world entity?\n"
         "Rules:\n"
-        "- Standard acronyms, abbreviations, nicknames, or official rebrandings (e.g. MIT, WHO, FBI, UN, Real Madrid, Lakers, F1, VW, Meta=Facebook, X=Twitter) ARE the same entity -> Answer YES.\n"
+        "- Short names, famous acronyms, abbreviations, nicknames, or full official names (e.g. MIT, WHO, FBI, UN, Real Madrid, Lakers, F1, VW, HBO=Home Box Office, Palantir=Palantir Technologies, Stanford=Stanford University, ICJ=International Court of Justice, Meta=Facebook, X=Twitter) ARE the same entity -> Answer YES.\n"
         "- Different entity types (e.g. Apple Fruit vs Apple Company) or distinct entities (e.g. OpenAI vs Anthropic) ARE NOT the same entity -> Answer NO.\n\n"
         "Reply STRICTLY with 'YES' or 'NO'."
     )

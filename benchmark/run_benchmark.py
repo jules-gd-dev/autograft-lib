@@ -1,5 +1,6 @@
 """Real API Benchmark comparing AutoGraft vs LangChain / naive LLM approach."""
 import os
+import sys
 import time
 from typing import Tuple
 from dotenv import load_dotenv
@@ -11,7 +12,18 @@ from autograft.models.entities import Entity, ExistingNode
 
 load_dotenv()
 
-MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192")
+MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile")
+
+
+def print_progress(current: int, total: int, prefix: str = "Progress", length: int = 35) -> None:
+    """Displays a clean animated ASCII progress bar in the terminal."""
+    percent = (current / total) * 100.0
+    filled = int(length * current // total)
+    bar = "█" * filled + "░" * (length - filled)
+    sys.stdout.write(f"\r{prefix} |{bar}| {current}/{total} ({percent:.1f}%)")
+    sys.stdout.flush()
+    if current == total:
+        sys.stdout.write("\n")
 
 
 def build_dataset() -> Tuple[list[ExistingNode], list[Entity]]:
@@ -123,8 +135,9 @@ def run_langchain_benchmark(
     start_time = time.time()
     total_tokens = 0
     llm_calls = 0
+    total = len(test_entities)
 
-    for entity in test_entities:
+    for idx, entity in enumerate(test_entities, 1):
         prompt = (
             f"Existing Graph Nodes:\n{nodes_str}\n\n"
             f"Extracted Entity: Name='{entity.canonical_name}', Type='{entity.type}'\n"
@@ -139,9 +152,10 @@ def run_langchain_benchmark(
             if hasattr(response, "usage") and response.usage:
                 total_tokens += getattr(response.usage, "total_tokens", 0) or 0
         except Exception as err:
-            print(f"  API Warning for '{entity.canonical_name}': {type(err).__name__} - {err}")
             llm_calls += 1
             total_tokens += 0
+
+        print_progress(idx, total, prefix="LangChain Benchmark")
 
     elapsed_time = time.time() - start_time
     return elapsed_time, llm_calls, total_tokens
@@ -151,16 +165,19 @@ def run_autograft_benchmark(
     existing_nodes: list[ExistingNode], test_entities: list[Entity]
 ) -> Tuple[float, int, int]:
     """Runs AutoGraft 3-layer hybrid Entity Resolution pipeline."""
-    print(f"Running AutoGraft Hybrid ER Approach on {len(test_entities)} entities...")
+    print(f"\nRunning AutoGraft Hybrid ER Approach on {len(test_entities)} entities...")
     start_time = time.time()
     total_tokens = 0
     llm_calls = 0
+    total = len(test_entities)
 
-    for entity in test_entities:
+    for idx, entity in enumerate(test_entities, 1):
         result = resolve_entity(entity, existing_nodes)
         if result.layer == "llm_arbiter":
             llm_calls += 1
             total_tokens += result.tokens_used
+
+        print_progress(idx, total, prefix="AutoGraft Benchmark")
 
     elapsed_time = time.time() - start_time
     return elapsed_time, llm_calls, total_tokens
@@ -237,7 +254,7 @@ def generate_cost_projection_chart(
 
     data_volumes = [10, 100, 1_000, 10_000, 100_000, 1_000_000]
     volume_labels = ["10", "100", "1,000", "10,000", "100,000", "1,000,000"]
-    PRICE_PER_MILLION_TOKENS = 0.20  # $0.20 per 1M tokens (e.g. Groq Llama 3 8B)
+    PRICE_PER_MILLION_TOKENS = 0.20  # $0.20 per 1M tokens (e.g. Groq Llama 3)
 
     lc_costs = [
         (vol * lc_avg_tokens / 1_000_000) * PRICE_PER_MILLION_TOKENS
