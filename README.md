@@ -1,8 +1,22 @@
-# AutoGraft
+<div align="center">
+  
+# Autograft
 
-The cost-efficient Entity Resolution middleware for GraphRAG.
+**The cost-efficient Entity Resolution middleware for GraphRAG.**
+
+[English](README.md) | [Français](README_fr.md) | [中文](README_zh.md)
+
+[![PyPI](https://img.shields.io/pypi/v/autograft)](https://pypi.org/project/autograft/)
+</div>
 
 Stop duplicating entities in your Neo4j Knowledge Graph. AutoGraft intercepts entities extracted by LangChain or LlamaIndex, uses a 3-layer hybrid approach (Deterministic -> Vector -> LLM) to merge duplicates, and generates clean Cypher queries.
+
+## Installation
+
+```bash
+pip install autograft
+```
+*(To use integrations, install with `pip install autograft[langchain]` or `pip install autograft[llamaindex]`)*
 
 ## Why AutoGraft?
 
