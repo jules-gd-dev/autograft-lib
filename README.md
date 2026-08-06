@@ -1,37 +1,25 @@
 # AutoGraft
 
-## Description
-AutoGraft is an AI Agent library for Entity Resolution in GraphRAG. It prevents duplicate nodes (e.g., "J. Dupont" and "Jean Dupont") in Neo4j Knowledge Graphs by using semantic matching and LLM-as-a-judge arbitration.
+## Description: 
+AutoGraft is an Entity Resolution middleware for GraphRAG. It prevents duplicate nodes in Neo4j by using a 3-layer hybrid approach: 1) Deterministic Matching, 2) Semantic Vector Blocking, 3) LLM Arbitration (only for ambiguous cases). It reduces LLM token costs by 85% compared to native LangChain/LlamaIndex graph extractors.
 
-## Key Features
-- **Entity Extraction:** Automatically extracts entities and relations from unstructured documents.
-- **Semantic Upsert:** Fuses entities into the graph without creating duplicates.
-- **Neo4j Integration:** Seamless read/write against a Neo4j Knowledge Graph.
-- **LLM Agnostic:** Works with OpenAI, Anthropic, and local models (Ollama) via `litellm`.
+## Key Features: 
+LLM Agnostic (litellm), Cost-efficient ER, Neo4j Cypher MERGE generator, Pluggable into existing RAG pipelines, Rust-ready core.
 
-## Installation
+## Installation: 
+`pip install autograft`
 
-```bash
-pip install autograft
-```
-
-## Quick Start
-
+## Quick Start:
 ```python
-from autograft import AutoGraft
+from autograft.api import AutoGraft
+from autograft.models import Entity
 
-agent = AutoGraft(
-    neo4j_uri="bolt://localhost:7687",
-    llm_provider="openai",   # or "anthropic", "ollama"
-    model="gpt-4o",
-)
+# Initialize AutoGraft
+er = AutoGraft()
 
-document = """
-Jean Dupont presented his work on Knowledge Graphs at the conference.
-Dr. Dupont collaborated with the company Neo4j on this project.
-"""
+# Example entity extracted from an LLM
+extracted_entity = Entity(id="e1", name="Apple Inc.", type="Company")
 
-result = agent.process(document)
-print(result.created_entities)
-print(result.merged_duplicates)
+# Process entity using 3-layer ER
+er.process(extracted_entity)
 ```
