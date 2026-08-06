@@ -139,9 +139,9 @@ def run_langchain_benchmark(
             if hasattr(response, "usage") and response.usage:
                 total_tokens += getattr(response.usage, "total_tokens", 0) or 0
         except Exception as err:
-            print(f"  Warning: LLM call failed ({err}); substituting fallback token estimate.")
+            print(f"  API Warning for '{entity.canonical_name}': {type(err).__name__} - {err}")
             llm_calls += 1
-            total_tokens += 320
+            total_tokens += 0
 
     elapsed_time = time.time() - start_time
     return elapsed_time, llm_calls, total_tokens

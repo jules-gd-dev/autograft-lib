@@ -1,6 +1,5 @@
 """End-to-end demonstration script for AutoGraft middleware."""
 import os
-from unittest.mock import patch
 from dotenv import load_dotenv
 from autograft import Entity, ExistingNode, resolve_and_generate_cypher
 from autograft.layers.llm_arbiter import arbitrate_match
@@ -50,33 +49,15 @@ def main() -> None:
     target_node = existing_nodes[0]  # Jean Dupont
 
     print(
-        f"Arbitrating uncertain match between '{uncertain_entity.canonical_name}' "
+        f"Arbitrating match between '{uncertain_entity.canonical_name}' "
         f"and '{target_node.canonical_name}'..."
     )
 
-    has_api_key = any(
-        os.getenv(k)
-        for k in [
-            "GROQ_API_KEY",
-            "OPENAI_API_KEY",
-            "OPENROUTER_API_KEY",
-            "ZHIPUAI_API_KEY",
-        ]
-    )
-
-    if not has_api_key:
-        print("(No API key detected in environment; mocking LLM response for demo)")
-        with patch("autograft.layers.llm_arbiter._ask_llm", return_value="OUI"):
-            result = arbitrate_match(uncertain_entity, target_node, model=model)
-    else:
-        try:
-            result = arbitrate_match(uncertain_entity, target_node, model=model)
-        except Exception as err:
-            print(f"(LLM call failed: {err}; falling back to mocked 'OUI' for demo)")
-            with patch("autograft.layers.llm_arbiter._ask_llm", return_value="OUI"):
-                result = arbitrate_match(uncertain_entity, target_node, model=model)
-
-    print(f"MatchResult from Layer 3: {result}")
+    try:
+        result = arbitrate_match(uncertain_entity, target_node, model=model)
+        print(f"MatchResult from Layer 3: {result}")
+    except Exception as err:
+        print(f"LLM Arbitration API Error ({type(err).__name__}): {err}")
 
 
 if __name__ == "__main__":
