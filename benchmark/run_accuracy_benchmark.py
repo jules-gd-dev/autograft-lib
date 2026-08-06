@@ -11,7 +11,7 @@ from autograft.models.entities import Entity, ExistingNode
 
 load_dotenv()
 
-AUTOGRAFT_MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.1-8b-instant")
+AUTOGRAFT_MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile")
 JUDGE_MODEL = os.getenv("JUDGE_LLM_MODEL", "groq/llama-3.3-70b-versatile")
 
 
@@ -148,10 +148,9 @@ def verify_decision(
     judge_model: str = JUDGE_MODEL,
 ) -> Tuple[bool, str]:
     """Uses a Judge LLM to verify if AutoGraft's entity resolution decision is correct."""
-    # Check decision against expected ground truth
     if autograft_decision == expected_match:
         return True, "✅ CORRECT"
-    
+
     prompt = (
         f"An AI system decided if Entity A ('{entity_a_name}') and Entity B ('{entity_b_name}') "
         f"are the same real-world entity.\n"
@@ -159,7 +158,7 @@ def verify_decision(
         "Is this decision strictly correct based on real-world knowledge?\n"
         "Reply STRICTLY with the word 'YES' (correct) or 'NO' (incorrect)."
     )
-    for attempt in range(3):
+    for attempt in range(4):
         try:
             response = litellm.completion(
                 model=judge_model,
@@ -172,7 +171,7 @@ def verify_decision(
         except Exception as err:
             err_name = type(err).__name__
             if "RateLimit" in err_name or "429" in str(err):
-                time.sleep(1.5 * (attempt + 1))
+                time.sleep(2.5 * (attempt + 1))
                 continue
             return False, f"⚠️ JUDGE API ERROR ({err_name}: {err})"
 
@@ -271,7 +270,7 @@ def run_accuracy_benchmark() -> None:
             f"{idx:<3} | {domain:<18} | {new_entity.canonical_name:<22} | {existing_node.canonical_name:<28} | "
             f"{decision_str:<18} | {verdict_str:<12}"
         )
-        time.sleep(0.1)
+        time.sleep(2.1)  # Respect Groq 30 RPM rate limit
 
     accuracy_pct = (correct_decisions / total_cases) * 100.0
 

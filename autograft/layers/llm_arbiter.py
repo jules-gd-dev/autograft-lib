@@ -1,5 +1,6 @@
 """Layer 3: LLM Arbitration for ambiguous entity resolution cases using LiteLLM."""
 import os
+import time
 from typing import Tuple
 from dotenv import load_dotenv
 import litellm
@@ -12,16 +13,26 @@ def _ask_llm(
     prompt: str,
     model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
 ) -> Tuple[str, int]:
-    """Calls litellm completion and returns (content_string, total_tokens)."""
-    response = litellm.completion(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    content = str(response.choices[0].message.content)
-    tokens = 0
-    if hasattr(response, "usage") and response.usage:
-        tokens = getattr(response.usage, "total_tokens", 0) or 0
-    return content, tokens
+    """Calls litellm completion with exponential backoff retry for rate limits."""
+    for attempt in range(5):
+        try:
+            response = litellm.completion(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            content = str(response.choices[0].message.content)
+            tokens = 0
+            if hasattr(response, "usage") and response.usage:
+                tokens = getattr(response.usage, "total_tokens", 0) or 0
+            return content, tokens
+        except Exception as err:
+            err_str = str(err)
+            if "RateLimit" in type(err).__name__ or "429" in err_str:
+                time.sleep(3 * (attempt + 1))
+                continue
+            raise err
+
+    raise RuntimeError("LLM request failed after 5 retry attempts.")
 
 
 def arbitrate_match(
@@ -30,17 +41,18 @@ def arbitrate_match(
     model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
 ) -> MatchResult:
     """Arbitrates ambiguous match between new_entity and existing_node via LLM."""
+    aliases_str = f", Aliases={new_entity.aliases}" if new_entity.aliases else ""
+    node_aliases_str = f", Aliases={existing_node.aliases}" if existing_node.aliases else ""
+
     prompt = (
         "You are an expert Entity Resolution system.\n"
-        "Determine whether Entity A and Entity B refer to the exact same real-world entity.\n\n"
-        f"Entity A: Name='{new_entity.canonical_name}', Type='{new_entity.type}', Aliases={new_entity.aliases}\n"
-        f"Entity B: Name='{existing_node.canonical_name}', Type='{existing_node.type}', Aliases={existing_node.aliases}\n\n"
-        "Evaluation Rules:\n"
-        "- Standard acronyms, abbreviations, nicknames, or official rebrandings (e.g. 'WHO' = 'World Health Organization', 'FBI' = 'Federal Bureau of Investigation', 'MIT' = 'Massachusetts Institute of Technology', 'Stanford' = 'Stanford University', 'Harvard' = 'Harvard University', 'VW' = 'Volkswagen', 'Meta' = 'Facebook Inc.', 'NYC' = 'New York City', 'Real Madrid' = 'Real Madrid C.F.', 'UN' = 'United Nations', 'Lakers' = 'Los Angeles Lakers', 'Warriors' = 'Golden State Warriors', 'F1' = 'Formula 1', 'Super Bowl' = 'NFL Championship', 'Olympic Games' = 'Olympics') represent the SAME entity -> Answer YES.\n"
-        "- Different entity types (e.g. Apple Fruit vs Apple Inc Company, Amazon Location vs Amazon.com Company, Python Animal vs Python Software) represent DIFFERENT entities -> Answer NO.\n"
-        "- Distinct entities or different specific products (e.g. OpenAI vs Anthropic, Emmanuel Macron vs Barack Obama, PlayStation vs Sony PS5, Windows 11 vs macOS, Manchester United vs Manchester City, UNESCO vs UNICEF) represent DIFFERENT entities -> Answer NO.\n\n"
+        f"Entity A: Name='{new_entity.canonical_name}', Type='{new_entity.type}'{aliases_str}\n"
+        f"Entity B: Name='{existing_node.canonical_name}', Type='{existing_node.type}'{node_aliases_str}\n\n"
         "Do Entity A and Entity B refer to the exact same real-world entity?\n"
-        "Respond ONLY with 'YES' or 'NO'."
+        "Rules:\n"
+        "- Standard acronyms, abbreviations, nicknames, or official rebrandings (e.g. MIT, WHO, FBI, UN, Real Madrid, Lakers, F1, VW, Meta=Facebook, X=Twitter) ARE the same entity -> Answer YES.\n"
+        "- Different entity types (e.g. Apple Fruit vs Apple Company) or distinct entities (e.g. OpenAI vs Anthropic) ARE NOT the same entity -> Answer NO.\n\n"
+        "Reply STRICTLY with 'YES' or 'NO'."
     )
     try:
         res = _ask_llm(prompt, model=model)
