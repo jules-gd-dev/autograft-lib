@@ -5,3 +5,5 @@ venv/
 .pytest_cache/
 build/
 dist/
+scratch/
+AGENTS.md
