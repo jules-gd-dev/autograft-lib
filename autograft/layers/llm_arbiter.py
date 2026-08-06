@@ -1,9 +1,16 @@
 """Layer 3: LLM Arbitration for ambiguous entity resolution cases using LiteLLM."""
+import os
+from dotenv import load_dotenv
 import litellm
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
+load_dotenv()
 
-def _ask_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
+
+def _ask_llm(
+    prompt: str,
+    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192"),
+) -> str:
     """Calls litellm completion and returns response content string."""
     response = litellm.completion(
         model=model,
@@ -15,7 +22,7 @@ def _ask_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
 def arbitrate_match(
     new_entity: Entity,
     existing_node: ExistingNode,
-    model: str = "gpt-4o-mini",
+    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192"),
 ) -> MatchResult:
     """Arbitrates ambiguous match between new_entity and existing_node via LLM."""
     prompt = (
