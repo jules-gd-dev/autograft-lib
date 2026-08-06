@@ -1,6 +1,7 @@
 """Layer 2: Semantic Entity Resolution using vector embeddings."""
-from typing import Optional
+
 import numpy as np
+
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
 
@@ -26,7 +27,7 @@ def find_semantic_match(
         return MatchResult(is_match=False)
 
     best_score: float = -1.0
-    best_node_id: Optional[str] = None
+    best_node_id: str | None = None
 
     for node in existing_nodes:
         if node.embedding is None:

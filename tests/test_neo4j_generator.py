@@ -1,4 +1,5 @@
 """Unit tests for Neo4j Cypher query generator."""
+
 from autograft.db.neo4j_generator import generate_merge_query
 from autograft.models.entities import Entity, MatchResult
 

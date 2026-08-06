@@ -1,4 +1,5 @@
 """Unit tests for Layer 2 Semantic ER."""
+
 from autograft.layers.semantic import cosine_similarity, find_semantic_match
 from autograft.models.entities import Entity, ExistingNode
 

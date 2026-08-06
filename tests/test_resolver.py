@@ -1,5 +1,7 @@
 """Unit tests for Core Entity Resolver orchestrator."""
+
 from unittest.mock import patch
+
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
