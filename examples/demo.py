@@ -1,10 +1,18 @@
 """End-to-end demonstration script for AutoGraft middleware."""
+import os
+from unittest.mock import patch
+from dotenv import load_dotenv
 from autograft import Entity, ExistingNode, resolve_and_generate_cypher
+from autograft.layers.llm_arbiter import arbitrate_match
+
+load_dotenv()
 
 
 def main() -> None:
     """Demonstrates AutoGraft Entity Resolution and Cypher generation."""
+    model = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192")
     print("=== AutoGraft Entity Resolution Demo ===")
+    print(f"Using model: {model}\n")
 
     # Existing Knowledge Graph nodes in Neo4j
     existing_nodes = [
@@ -35,6 +43,40 @@ def main() -> None:
         cypher = resolve_and_generate_cypher(entity, existing_nodes)
         print("Generated Cypher Query:")
         print(f"  {cypher}\n")
+
+    # Explicit Layer 3 (LLM Arbitration) Demonstration for Uncertain Match
+    print("=== Layer 3 (LLM Arbitration) Demo ===")
+    uncertain_entity = Entity(canonical_name="J. Dupont", type="Person")
+    target_node = existing_nodes[0]  # Jean Dupont
+
+    print(
+        f"Arbitrating uncertain match between '{uncertain_entity.canonical_name}' "
+        f"and '{target_node.canonical_name}'..."
+    )
+
+    has_api_key = any(
+        os.getenv(k)
+        for k in [
+            "GROQ_API_KEY",
+            "OPENAI_API_KEY",
+            "OPENROUTER_API_KEY",
+            "ZHIPUAI_API_KEY",
+        ]
+    )
+
+    if not has_api_key:
+        print("(No API key detected in environment; mocking LLM response for demo)")
+        with patch("autograft.layers.llm_arbiter._ask_llm", return_value="OUI"):
+            result = arbitrate_match(uncertain_entity, target_node, model=model)
+    else:
+        try:
+            result = arbitrate_match(uncertain_entity, target_node, model=model)
+        except Exception as err:
+            print(f"(LLM call failed: {err}; falling back to mocked 'OUI' for demo)")
+            with patch("autograft.layers.llm_arbiter._ask_llm", return_value="OUI"):
+                result = arbitrate_match(uncertain_entity, target_node, model=model)
+
+    print(f"MatchResult from Layer 3: {result}")
 
 
 if __name__ == "__main__":
