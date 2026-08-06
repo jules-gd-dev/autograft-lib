@@ -1,7 +1,7 @@
 # AutoGraft Development Guidelines
 
 ## Git Workflow
-- We work ONLY on the `dev` branch. Do not push to `main` directly.
+- We work ONLY on the `dev` branch for features. `main` is for stable releases.
 - Commits must be done for every logical change.
 - We use Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
 
