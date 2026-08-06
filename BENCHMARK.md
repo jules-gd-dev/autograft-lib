@@ -33,31 +33,13 @@ The macro benchmark suite evaluates **200 real-world enterprise documents** acro
 ### 2.2 Figure References & Analytical Charts
 
 #### Figure 1.1: Macro Enterprise RAG ER Benchmark Metrics
-```
-+-----------------------------------------------------------------------------------+
-| Figure 1.1: Total Tokens Consumed, LLM Calls, Duplicates Avoided, MATCH by Sector |
-| Asset File: benchmark/assets/macro_benchmark_metrics.png                         |
-+-----------------------------------------------------------------------------------+
-```
-![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
+![Figure 1.1: Total Tokens Consumed, LLM Calls, Duplicates Avoided, MATCH by Sector](benchmark/assets/macro_benchmark_metrics.png)
 
 #### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1M Documents)
-```
-+-----------------------------------------------------------------------------------+
-| Figure 1.2: Linear Financial Cost Scaling Projection up to 1,000,000 Documents    |
-| Asset File: benchmark/assets/macro_cost_scaling_1m.png                            |
-+-----------------------------------------------------------------------------------+
-```
-![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png)
+![Figure 1.2: Linear Financial Cost Scaling Projection up to 1,000,000 Documents](benchmark/assets/macro_cost_scaling_1m.png)
 
 #### Figure 1.3: Resolution Accuracy Precision by Industry Sector
-```
-+-----------------------------------------------------------------------------------+
-| Figure 1.3: Entity Resolution Precision Breakdown by Industry Domain (100.0%)     |
-| Asset File: benchmark/assets/macro_accuracy_by_industry.png                      |
-+-----------------------------------------------------------------------------------+
-```
-![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png)
+![Figure 1.3: Entity Resolution Precision Breakdown by Industry Domain (100.0%)](benchmark/assets/macro_accuracy_by_industry.png)
 
 ---
 
