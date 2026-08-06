@@ -45,17 +45,16 @@ def generate_macro_charts(
         h = bar.get_height()
         axes[1, 0].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    # 4. MATCH Queries by Industry
-    ind_names = list(industry_metrics.keys())
-    match_by_ind = [industry_metrics[ind]["matches"] for ind in ind_names]
-    bars4 = axes[1, 1].bar(ind_names, match_by_ind, color="#3B82F6", width=0.5)
-    axes[1, 1].set_title("MATCH Queries Deduplication Breakdown by Industry", fontweight="bold")
-    axes[1, 1].set_xlabel("Industry Sector", fontweight="bold")
-    axes[1, 1].set_ylabel("Matched Existing Nodes", fontweight="bold")
+    # 4. Estimated LLM Cost ($ USD)
+    lc_cost = (total_lc_tokens / 1_000_000) * 0.20
+    ag_cost = (total_ag_tokens / 1_000_000) * 0.20
+    bars4 = axes[1, 1].bar(labels, [0.0, lc_cost, ag_cost], color=colors, width=0.45)
+    axes[1, 1].set_title("Estimated LLM Cost ($ USD)", fontweight="bold")
+    axes[1, 1].set_ylabel("Cost in USD", fontweight="bold")
     axes[1, 1].grid(axis="y", linestyle="--", alpha=0.5)
     for bar in bars4:
         h = bar.get_height()
-        axes[1, 1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
+        axes[1, 1].annotate(f"${h:.5f}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.savefig("benchmark/assets/macro_benchmark_metrics.png", dpi=300)
@@ -88,6 +87,7 @@ def generate_macro_charts(
 
     # Figure 1.3: Accuracy Breakdown by Industry Chart
     fig, ax = plt.subplots(figsize=(9, 5))
+    ind_names = list(industry_metrics.keys())
     ind_scores = [industry_metrics[ind]["accuracy"] for ind in ind_names]
     bars = ax.bar(ind_names, ind_scores, color="#10B981", width=0.5)
     ax.set_ylim(0, 115)
