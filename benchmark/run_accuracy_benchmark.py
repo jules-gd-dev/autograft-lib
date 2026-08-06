@@ -1,5 +1,6 @@
 """Accuracy Benchmark using LLM-as-a-Judge to audit AutoGraft entity resolution decisions."""
 import os
+import time
 from typing import Tuple
 from dotenv import load_dotenv
 import litellm
@@ -10,7 +11,10 @@ from autograft.models.entities import Entity, ExistingNode
 load_dotenv()
 
 AUTOGRAFT_MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192")
-JUDGE_MODEL = os.getenv("JUDGE_LLM_MODEL", "openrouter/google/gemini-pro-1.5")
+JUDGE_MODEL = os.getenv(
+    "JUDGE_LLM_MODEL",
+    os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192"),
+)
 
 
 def build_tricky_dataset() -> list[Tuple[Entity, ExistingNode, bool]]:
@@ -146,7 +150,7 @@ def verify_decision(
 ) -> Tuple[bool, str]:
     """Uses a Judge LLM to verify if AutoGraft's entity resolution decision is correct.
 
-    Returns (is_correct, status_reason_message). Does NOT default to True on error.
+    Includes retry with backoff on RateLimitError (429). Returns (is_correct, status_reason_message).
     """
     prompt = (
         f"An AI system decided if Entity A ('{entity_a_name}') and Entity B ('{entity_b_name}') "
@@ -155,18 +159,24 @@ def verify_decision(
         "Is this decision strictly correct based on real-world knowledge?\n"
         "Reply STRICTLY with the word 'YES' (correct) or 'NO' (incorrect)."
     )
-    try:
-        response = litellm.completion(
-            model=judge_model,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        content = str(response.choices[0].message.content).strip().upper()
-        if "YES" in content:
-            return True, "✅ CORRECT"
-        return False, "❌ INCORRECT"
-    except Exception as err:
-        # Strict failure on API/retrieval error to prevent inflating benchmark accuracy
-        return False, f"⚠️ JUDGE API ERROR ({type(err).__name__}: {err})"
+    for attempt in range(3):
+        try:
+            response = litellm.completion(
+                model=judge_model,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            content = str(response.choices[0].message.content).strip().upper()
+            if "YES" in content:
+                return True, "✅ CORRECT"
+            return False, "❌ INCORRECT"
+        except Exception as err:
+            err_name = type(err).__name__
+            if "RateLimit" in err_name or "429" in str(err):
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            return False, f"⚠️ JUDGE API ERROR ({err_name}: {err})"
+
+    return False, "⚠️ JUDGE API ERROR (Rate limit exceeded after retries)"
 
 
 def run_accuracy_benchmark() -> None:
@@ -208,6 +218,7 @@ def run_accuracy_benchmark() -> None:
             f"{idx:<3} | {new_entity.canonical_name:<22} | {existing_node.canonical_name:<32} | "
             f"{decision_str:<18} | {verdict_str:<20}"
         )
+        time.sleep(0.15)  # Small pacing delay to prevent rate limits on large batch runs
 
     accuracy_pct = (correct_decisions / total_cases) * 100.0
     print("-" * 105)
