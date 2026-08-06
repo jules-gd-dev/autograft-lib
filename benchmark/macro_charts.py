@@ -12,22 +12,26 @@ def generate_macro_charts(
     """Generates formal benchmark charts with figure numbering and standardized legends."""
     os.makedirs("benchmark/assets", exist_ok=True)
     colors = ["#EF4444", "#10B981"]
+    labels = ["LangChain + Full LLM ER", "LangChain + AutoGraft"]
 
     # Figure 1.1: Macro Benchmark Metrics Chart
-    fig, axes = plt.subplots(1, 4, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 4, figsize=(19, 5))
     fig.suptitle("Figure 1.1: Macro Enterprise RAG ER Benchmark Metrics (200 Docs / 4 Industries)", fontsize=14, fontweight="bold")
 
-    axes[0].bar(["LangChain", "AutoGraft"], [total_lc_tokens, total_ag_tokens], color=colors, width=0.5)
+    axes[0].bar(labels, [total_lc_tokens, total_ag_tokens], color=colors, width=0.5)
     axes[0].set_title("Total Tokens Consumed", fontweight="bold")
     axes[0].set_xlabel("Architecture Strategy", fontweight="bold")
+    axes[0].tick_params(axis='x', rotation=10)
 
-    axes[1].bar(["LangChain", "AutoGraft"], [total_lc_calls, total_ag_calls], color=colors, width=0.5)
+    axes[1].bar(labels, [total_lc_calls, total_ag_calls], color=colors, width=0.5)
     axes[1].set_title("LLM ER Calls", fontweight="bold")
     axes[1].set_xlabel("Architecture Strategy", fontweight="bold")
+    axes[1].tick_params(axis='x', rotation=10)
 
-    axes[2].bar(["LangChain", "AutoGraft"], [0, total_matches], color=colors, width=0.5)
+    axes[2].bar(labels, [0, total_matches], color=colors, width=0.5)
     axes[2].set_title("Duplicates Avoided (MATCH)", fontweight="bold")
     axes[2].set_xlabel("Architecture Strategy", fontweight="bold")
+    axes[2].tick_params(axis='x', rotation=10)
 
     ind_names = list(industry_metrics.keys())
     match_by_ind = [industry_metrics[ind]["matches"] for ind in ind_names]
@@ -48,8 +52,8 @@ def generate_macro_charts(
     ag_costs = [(v * ag_avg / 1_000_000) * 0.20 for v in volumes]
 
     fig, ax = plt.subplots(figsize=(10, 5.5))
-    ax.plot(range(len(volumes)), lc_costs, "o-", color="#EF4444", linewidth=2.5, label="LangChain Naive (100% LLM Calls)")
-    ax.plot(range(len(volumes)), ag_costs, "s-", color="#10B981", linewidth=2.5, label="AutoGraft Hybrid ER (3-Layer)")
+    ax.plot(range(len(volumes)), lc_costs, "o-", color="#EF4444", linewidth=2.5, label="LangChain + Full LLM ER")
+    ax.plot(range(len(volumes)), ag_costs, "s-", color="#10B981", linewidth=2.5, label="LangChain + AutoGraft Hybrid ER")
     ax.fill_between(range(len(volumes)), lc_costs, ag_costs, color="#10B981", alpha=0.15, label="Cost Savings Region (100% Saved)")
     ax.set_xticks(range(len(volumes)))
     ax.set_xticklabels(["10", "100", "1K", "10K", "100K", "1M"], fontweight="bold")
