@@ -66,21 +66,40 @@ For 1,000,000 documents, AutoGraft maintains **$0.00** LLM Entity Resolution API
 
 ---
 
-## Quick Start
+## Plug & Play Integrations
+
+AutoGraft provides native 1-line integrations for both **LangChain** and **LlamaIndex**. By wrapping your Graph store, AutoGraft intercepts entities, deduplicates them locally at 0 cost, and safely forwards them to your database.
+
+### 🦜🔗 LangChain
 
 ```python
-from autograft import Entity, ExistingNode, resolve_and_generate_cypher
+from langchain_community.graphs import Neo4jGraph
+from autograft.integrations import AutoGraftNeo4jMiddleware
 
-# 1. Define existing graph node in Neo4j
-existing_node = ExistingNode(node_id="n1", canonical_name="Apple Inc.", type="Company", aliases=["Apple"])
+# 1. Connect to your Neo4j Database
+graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
 
-# 2. New entity extracted from document
-new_entity = Entity(canonical_name="Apple", type="Company")
+# 2. Wrap it with AutoGraft (1 line of code!)
+autograft_graph = AutoGraftNeo4jMiddleware(graph)
 
-# 3. Resolve and generate Cypher query
-cypher_query = resolve_and_generate_cypher(new_entity, [existing_node])
-print(cypher_query)
-# Output: MATCH (n:Company {node_id: 'n1'}) SET n.aliases = coalesce(n.aliases, []) + ['Apple'] RETURN n;
+# 3. Add your extracted documents. AutoGraft will silently deduplicate everything locally!
+autograft_graph.add_graph_documents(extracted_graph_documents)
+```
+
+### 🦙 LlamaIndex
+
+```python
+from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
+from autograft.integrations import AutoGraftLlamaIndexMiddleware
+
+# 1. Connect to Neo4j Graph Store
+store = Neo4jPropertyGraphStore(username="neo4j", password="password", url="bolt://localhost:7687")
+
+# 2. Wrap it with AutoGraft
+autograft_store = AutoGraftLlamaIndexMiddleware(store)
+
+# 3. Use in your LlamaIndex pipeline (upsert_nodes will be automatically deduplicated)
+# e.g., index = PropertyGraphIndex.from_documents(documents, property_graph_store=autograft_store)
 ```
 
 ---
