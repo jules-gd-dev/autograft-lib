@@ -11,6 +11,11 @@ AutoGraft reduces LLM API calls and token consumption by over **87%** by routing
 
 ![Benchmark Results](benchmark/assets/benchmark_results.png)
 
+### 📈 Projected Cost at Scale
+AutoGraft scales linearly and cost-effectively for large Knowledge Graphs. For 1,000,000 entities, AutoGraft reduces projected LLM API costs from **~$40.00** down to **~$0.72** (assuming typical $0.20 / 1M token rate), achieving over **98% cost savings at scale**.
+
+![Cost Projection](benchmark/assets/cost_projection.png)
+
 ## Installation: 
 `pip install autograft`
 
