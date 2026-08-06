@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autograft"
+version = "1.0.0"
+description = "The cost-efficient Entity Resolution middleware for GraphRAG."
+readme = "README.md"
+authors = [
+    { name = "Jules GAY--DONAT", email = "jules.gaydonat@gmail.com" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+keywords = ["graphrag", "neo4j", "entity-resolution", "langchain", "llamaindex", "llm", "knowledge-graph"]
+requires-python = ">=3.10"
+dependencies = [
+    "rapidfuzz>=3.0.0",
+    "numpy>=1.24.0",
+    "pydantic>=2.0.0",
+    "neo4j>=5.10.0",
+    "litellm>=1.0.0"
+]
+
+[project.optional-dependencies]
+langchain = ["langchain-core", "langchain-community"]
+llamaindex = ["llama-index-core", "llama-index-graph-stores-neo4j"]
+all = ["langchain-core", "langchain-community", "llama-index-core", "llama-index-graph-stores-neo4j"]
+
+[project.urls]
+Homepage = "https://github.com/jules-gd-dev/autograft-lib"
+Repository = "https://github.com/jules-gd-dev/autograft-lib"
+Issues = "https://github.com/jules-gd-dev/autograft-lib/issues"
+
+[tool.setuptools.packages.find]
+include = ["autograft", "autograft.*"]
