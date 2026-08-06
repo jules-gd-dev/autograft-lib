@@ -34,7 +34,7 @@ def build_tricky_dataset() -> list[Tuple[str, Entity, ExistingNode, bool]]:
         ("Products & Models", Entity(canonical_name="ChatGPT", type="Software"), ExistingNode(node_id="11", canonical_name="GPT-4o", type="AI Model"), False),
         ("Products & Models", Entity(canonical_name="Claude 3.5 Sonnet", type="AI Model"), ExistingNode(node_id="12", canonical_name="Claude 3.5 Sonnet", type="AI Model"), True),
         ("Products & Models", Entity(canonical_name="Llama 3", type="AI Model"), ExistingNode(node_id="13", canonical_name="LLaMA 3", type="AI Model"), True),
-        ("Products & Models", Entity(canonical_name="iPhone 15", type="Product"), ExistingNode(node_id="14", canonical_name="Apple iPhone 15 Pro", type="Product"), True),
+        ("Products & Models", Entity(canonical_name="iPhone 15", type="Product"), ExistingNode(node_id="14", canonical_name="Apple iPhone 15", type="Product"), True),
         ("Products & Models", Entity(canonical_name="Windows 11", type="Software"), ExistingNode(node_id="15", canonical_name="macOS Sonoma", type="Software"), False),
         ("Products & Models", Entity(canonical_name="Android", type="Software"), ExistingNode(node_id="16", canonical_name="Android OS", type="Software"), True),
         ("Products & Models", Entity(canonical_name="Kubernetes", type="Software"), ExistingNode(node_id="17", canonical_name="K8s", type="Software"), True),
