@@ -1,4 +1,5 @@
 """Full-Stack End-to-End RAG Benchmark (100 Sentences: LangChain Only vs AutoGraft)."""
+import json
 import os
 import sys
 import time
@@ -9,6 +10,7 @@ from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_openai import ChatOpenAI
 
 from autograft import Entity, resolve_and_generate_cypher
+from autograft.core.resolver import resolve_entity
 from benchmark.full_stack_data import build_existing_nodes, get_100_sentences
 
 load_dotenv()
@@ -33,7 +35,6 @@ def generate_full_stack_charts(
     os.makedirs("benchmark/assets", exist_ok=True)
     colors = ["#EF4444", "#10B981"]
 
-    # 1. Performance Comparison Bar Chart
     fig, axes = plt.subplots(1, 4, figsize=(18, 4.5))
     fig.suptitle("Full-Stack RAG ER Benchmark (100 Sentences: LangChain vs AutoGraft)", fontsize=14, fontweight="bold")
 
@@ -53,30 +54,9 @@ def generate_full_stack_charts(
     plt.savefig("benchmark/assets/full_stack_metrics.png", dpi=300)
     plt.close()
 
-    # 2. Cost Scaling Chart up to 1M sentences
-    volumes = [10, 100, 1000, 10000, 100000, 1000000]
-    lc_avg = lc_tokens / 100
-    ag_avg = ag_tokens / 100
-
-    lc_costs = [(v * lc_avg / 1_000_000) * 0.20 for v in volumes]
-    ag_costs = [(v * ag_avg / 1_000_000) * 0.20 for v in volumes]
-
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.plot(range(len(volumes)), lc_costs, "o-", color="#EF4444", linewidth=2.5, label="LangChain Only")
-    ax.plot(range(len(volumes)), ag_costs, "s-", color="#10B981", linewidth=2.5, label="AutoGraft Hybrid")
-    ax.set_xticks(range(len(volumes)))
-    ax.set_xticklabels(["10", "100", "1K", "10K", "100K", "1M"], fontweight="bold")
-    ax.set_ylabel("Projected Cost ($)", fontweight="bold")
-    ax.set_title("RAG Pipeline Cost Scaling (Up to 1M Sentences)", fontweight="bold")
-    ax.grid(True, linestyle="--", alpha=0.5)
-    ax.legend(fontsize=11)
-    plt.tight_layout()
-    plt.savefig("benchmark/assets/full_stack_cost_scaling.png", dpi=300)
-    plt.close()
-
 
 def run_full_stack_benchmark() -> None:
-    """Executes full-stack benchmark on 100 sentences without auto-running."""
+    """Executes full-stack benchmark on 100 sentences with detailed JSON audit summary."""
     model = "llama-3.1-8b-instant"
     api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     base_url = "https://api.groq.com/openai/v1" if os.getenv("GROQ_API_KEY") else "https://openrouter.ai/api/v1"
@@ -94,6 +74,7 @@ def run_full_stack_benchmark() -> None:
 
     lc_tokens_total, ag_tokens_total, lc_calls_total, ag_calls_total = 0, 0, 0, 0
     total_match, total_merge = 0, 0
+    audit_entries = []
     report_lines = ["100 Sentences Full-Stack RAG Benchmark Report\n"]
     start_time = time.time()
 
@@ -110,11 +91,28 @@ def run_full_stack_benchmark() -> None:
 
         for node in extracted:
             entity = Entity(canonical_name=str(node.id), type=str(node.type))
+            res = resolve_entity(entity, existing_nodes)
             cypher = resolve_and_generate_cypher(entity, existing_nodes)
-            if "MATCH" in cypher:
+
+            decision = "MATCH" if res.is_match else "MERGE"
+            if res.is_match:
                 total_match += 1
             else:
                 total_merge += 1
+
+            matched_node = next((n for n in existing_nodes if n.node_id == res.matched_node_id), None)
+            audit_entries.append({
+                "sentence_idx": idx,
+                "sentence_text": sentence,
+                "extracted_entity": str(node.id),
+                "entity_type": str(node.type),
+                "decision": decision,
+                "matched_node_id": res.matched_node_id,
+                "matched_canonical_name": matched_node.canonical_name if matched_node else None,
+                "layer": res.layer,
+                "score": res.score,
+                "cypher_query": cypher,
+            })
 
         print_progress(idx, total_sentences, prefix="Processing 100 Sentences")
 
@@ -124,6 +122,9 @@ def run_full_stack_benchmark() -> None:
         elapsed_time, elapsed_time * 0.1, total_match, total_merge
     )
 
+    with open("benchmark/assets/full_stack_audit_summary.json", "w", encoding="utf-8") as f:
+        json.dump(audit_entries, f, indent=2)
+
     report_lines.append(f"Total Sentences: {total_sentences}")
     report_lines.append(f"Extracted Entities: {lc_calls_total}")
     report_lines.append(f"Duplicates Avoided (MATCH): {total_match}")
@@ -132,7 +133,7 @@ def run_full_stack_benchmark() -> None:
     with open("benchmark/assets/full_stack_report.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
 
-    print(f"\nReport and charts saved in 'benchmark/assets/'")
+    print(f"\nAudit summary JSON and charts saved in 'benchmark/assets/'")
 
 
 if __name__ == "__main__":
