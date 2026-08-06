@@ -1,4 +1,5 @@
 """Core Entity Resolver orchestrating Layer 1, Layer 2, and Layer 3 matching."""
+
 from autograft.layers.deterministic import find_exact_match
 from autograft.layers.llm_arbiter import arbitrate_match
 from autograft.layers.semantic import find_semantic_match
@@ -25,11 +26,7 @@ def resolve_entity(
         and semantic_result.matched_node_id is not None
     ):
         matched_node = next(
-            (
-                n
-                for n in existing_nodes
-                if n.node_id == semantic_result.matched_node_id
-            ),
+            (n for n in existing_nodes if n.node_id == semantic_result.matched_node_id),
             None,
         )
         if matched_node is not None:

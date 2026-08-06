@@ -1,13 +1,14 @@
 """LangChain integration for AutoGraft."""
-from typing import Any, Dict, List, Set
+import contextlib
+from typing import TYPE_CHECKING, Any
 
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import Entity, ExistingNode
 
-try:
+if TYPE_CHECKING:
     from langchain_community.graphs import Neo4jGraph
     from langchain_community.graphs.graph_document import GraphDocument
-except ImportError:
+else:
     Neo4jGraph = Any
     GraphDocument = Any
 
@@ -17,15 +18,15 @@ class AutoGraftNeo4jMiddleware:
 
     def __init__(self, neo4j_graph: Neo4jGraph):
         self.graph = neo4j_graph
-        self._node_cache: Dict[str, List[ExistingNode]] = {}
+        self._node_cache: dict[str, list[ExistingNode]] = {}
 
-    def _fetch_cached_nodes(self, labels: Set[str]) -> List[ExistingNode]:
+    def _fetch_cached_nodes(self, labels: set[str]) -> list[ExistingNode]:
         """Fetches nodes from Neo4j natively, caching them locally per label."""
         nodes = []
         for label in labels:
             if label not in self._node_cache:
                 self._node_cache[label] = []
-                try:
+                with contextlib.suppress(Exception):
                     query = f"MATCH (n:`{label}`) RETURN n.id AS id, n.aliases AS aliases LIMIT 10000"
                     results = self.graph.query(query)
                     for r in results:
@@ -40,13 +41,11 @@ class AutoGraftNeo4jMiddleware:
                                     aliases=aliases,
                                 )
                             )
-                except Exception:
-                    pass  # If query fails, cache remains empty for this label
             nodes.extend(self._node_cache[label])
         return nodes
 
     def add_graph_documents(
-        self, graph_documents: List[GraphDocument], **kwargs: Any
+        self, graph_documents: list[GraphDocument], **kwargs: Any
     ) -> None:
         """Intercepts, deduplicates, and passes documents to LangChain's Neo4jGraph."""
         for doc in graph_documents:
@@ -61,8 +60,9 @@ class AutoGraftNeo4jMiddleware:
                 match_result = resolve_entity(entity, existing_nodes)
 
                 if match_result.is_match:
-                    id_mapping[node.id] = match_result.matched_node_id
-                    node.id = match_result.matched_node_id
+                    matched_id = str(match_result.matched_node_id)
+                    id_mapping[node.id] = matched_id
+                    node.id = matched_id
                 else:
                     new_ex_node = ExistingNode(
                         node_id=str(node.id),
@@ -78,9 +78,9 @@ class AutoGraftNeo4jMiddleware:
             # 2. Remap Relationships
             for rel in doc.relationships:
                 if rel.source.id in id_mapping:
-                    rel.source.id = id_mapping[rel.source.id]
+                    rel.source.id = str(id_mapping[rel.source.id])
                 if rel.target.id in id_mapping:
-                    rel.target.id = id_mapping[rel.target.id]
+                    rel.target.id = str(id_mapping[rel.target.id])
 
         # 3. Pass canonicalized documents to LangChain
         self.graph.add_graph_documents(graph_documents, **kwargs)

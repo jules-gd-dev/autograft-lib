@@ -1,4 +1,5 @@
 """Unit tests for AutoGraft Public API."""
+
 from autograft.api.main import resolve_and_generate_cypher
 from autograft.models.entities import Entity, ExistingNode
 

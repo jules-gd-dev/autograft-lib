@@ -1,5 +1,5 @@
 """Pydantic models for entities, existing graph nodes, and ER layer match results."""
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -10,7 +10,7 @@ class Entity(BaseModel):
     type: str
     aliases: list[str] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
-    embedding: Optional[list[float]] = None
+    embedding: list[float] | None = None
 
 
 class ExistingNode(BaseModel):
@@ -20,14 +20,14 @@ class ExistingNode(BaseModel):
     canonical_name: str
     type: str
     aliases: list[str] = Field(default_factory=list)
-    embedding: Optional[list[float]] = None
+    embedding: list[float] | None = None
 
 
 class MatchResult(BaseModel):
     """Represents the result of an ER layer check."""
 
     is_match: bool
-    matched_node_id: Optional[str] = None
+    matched_node_id: str | None = None
     score: float = 0.0
     layer: str = "deterministic"
     tokens_used: int = 0

@@ -1,5 +1,7 @@
 """Layer 1: Deterministic Entity Resolution using string matching."""
+
 from rapidfuzz import fuzz
+
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
 MATCH_THRESHOLD = 95.0

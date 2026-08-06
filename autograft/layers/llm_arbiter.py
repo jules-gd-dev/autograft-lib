@@ -1,9 +1,11 @@
 """Layer 3: LLM Arbitration for ambiguous entity resolution cases using LiteLLM."""
+
 import os
 import time
-from typing import Tuple
-from dotenv import load_dotenv
+
 import litellm
+from dotenv import load_dotenv
+
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
 load_dotenv()
@@ -12,7 +14,7 @@ load_dotenv()
 def _ask_llm(
     prompt: str,
     model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
-) -> Tuple[str, int]:
+) -> tuple[str, int]:
     """Calls litellm completion with exponential backoff retry for rate limits."""
     for attempt in range(5):
         try:
@@ -30,7 +32,7 @@ def _ask_llm(
             if "RateLimit" in type(err).__name__ or "429" in err_str:
                 time.sleep(3 * (attempt + 1))
                 continue
-            raise err
+            raise
 
     raise RuntimeError("LLM request failed after 5 retry attempts.")
 
@@ -42,7 +44,9 @@ def arbitrate_match(
 ) -> MatchResult:
     """Arbitrates ambiguous match between new_entity and existing_node via LLM."""
     aliases_str = f", Aliases={new_entity.aliases}" if new_entity.aliases else ""
-    node_aliases_str = f", Aliases={existing_node.aliases}" if existing_node.aliases else ""
+    node_aliases_str = (
+        f", Aliases={existing_node.aliases}" if existing_node.aliases else ""
+    )
 
     prompt = (
         "You are an expert Entity Resolution system.\n"
@@ -77,7 +81,11 @@ def arbitrate_match(
             layer="llm_arbiter",
             tokens_used=tokens_used,
         )
-    except Exception:
+    except Exception as e:  # noqa: BLE001
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.debug(e)
         return MatchResult(
             is_match=False,
             score=0.0,

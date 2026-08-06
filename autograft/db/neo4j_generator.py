@@ -1,4 +1,5 @@
 """Neo4j Cypher query generator for creating or merging entity nodes."""
+
 from autograft.models.entities import Entity, MatchResult
 
 
