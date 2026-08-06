@@ -10,6 +10,7 @@ class Entity(BaseModel):
     type: str
     aliases: list[str] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
+    embedding: Optional[list[float]] = None
 
 
 class ExistingNode(BaseModel):
@@ -19,6 +20,7 @@ class ExistingNode(BaseModel):
     canonical_name: str
     type: str
     aliases: list[str] = Field(default_factory=list)
+    embedding: Optional[list[float]] = None
 
 
 class MatchResult(BaseModel):
