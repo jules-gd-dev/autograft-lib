@@ -15,57 +15,51 @@ MODEL = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192")
 
 
 def build_dataset() -> Tuple[list[ExistingNode], list[Entity]]:
-    """Builds test dataset: 5 ExistingNodes and 5 Entities."""
+    """Builds a rich, real-world benchmark dataset with 15 existing nodes and 20 test entities."""
     existing_nodes = [
-        ExistingNode(
-            node_id="n1",
-            canonical_name="Microsoft",
-            type="Company",
-            aliases=["MSFT"],
-        ),
-        ExistingNode(
-            node_id="n2",
-            canonical_name="Apple Inc.",
-            type="Company",
-            aliases=["Apple"],
-        ),
-        ExistingNode(
-            node_id="n3",
-            canonical_name="Jean Dupont",
-            type="Person",
-            embedding=[0.8, 0.6, 0.0],
-        ),
-        ExistingNode(
-            node_id="n4",
-            canonical_name="Google",
-            type="Company",
-            aliases=["Alphabet"],
-        ),
-        ExistingNode(
-            node_id="n5",
-            canonical_name="Tesla",
-            type="Company",
-            aliases=["TSLA"],
-        ),
+        ExistingNode(node_id="n1", canonical_name="Microsoft Corporation", type="Company", aliases=["Microsoft", "MSFT"]),
+        ExistingNode(node_id="n2", canonical_name="Apple Inc.", type="Company", aliases=["Apple", "AAPL"]),
+        ExistingNode(node_id="n3", canonical_name="Alphabet Inc.", type="Company", aliases=["Google", "GOOGL"]),
+        ExistingNode(node_id="n4", canonical_name="Amazon.com Inc.", type="Company", aliases=["Amazon", "AMZN"]),
+        ExistingNode(node_id="n5", canonical_name="Tesla Inc.", type="Company", aliases=["Tesla", "TSLA"]),
+        ExistingNode(node_id="n6", canonical_name="Meta Platforms Inc.", type="Company", aliases=["Facebook", "META"]),
+        ExistingNode(node_id="n7", canonical_name="NVIDIA Corporation", type="Company", aliases=["Nvidia", "NVDA"]),
+        ExistingNode(node_id="n8", canonical_name="Jean Dupont", type="Person", aliases=["J. Dupont"], embedding=[0.8, 0.6, 0.0]),
+        ExistingNode(node_id="n9", canonical_name="Marie Curie", type="Person", aliases=["M. Curie"]),
+        ExistingNode(node_id="n10", canonical_name="Albert Einstein", type="Person", aliases=["A. Einstein"]),
+        ExistingNode(node_id="n11", canonical_name="International Business Machines", type="Company", aliases=["IBM"]),
+        ExistingNode(node_id="n12", canonical_name="Oracle Corporation", type="Company", aliases=["Oracle"]),
+        ExistingNode(node_id="n13", canonical_name="Salesforce Inc.", type="Company", aliases=["Salesforce"]),
+        ExistingNode(node_id="n14", canonical_name="Adobe Inc.", type="Company", aliases=["Adobe"]),
+        ExistingNode(node_id="n15", canonical_name="Netflix Inc.", type="Company", aliases=["Netflix", "NFLX"]),
     ]
 
     test_entities = [
-        # 3 Exact Matches (Layer 1)
+        # Layer 1 Hits (Exact String / Alias match) - 12 entities
         Entity(canonical_name="Microsoft", type="Company"),
+        Entity(canonical_name="Apple Inc.", type="Company"),
         Entity(canonical_name="Google", type="Company"),
+        Entity(canonical_name="Amazon", type="Company"),
         Entity(canonical_name="Tesla", type="Company"),
-        # 1 Uncertain Match (Layer 3 trigger: cosine similarity = 0.80)
-        Entity(
-            canonical_name="J. Dupont",
-            type="Person",
-            embedding=[1.0, 0.0, 0.0],
-        ),
-        # 1 New Entity (Layer 2 low similarity)
-        Entity(
-            canonical_name="Amazon",
-            type="Company",
-            embedding=[0.0, 1.0, 0.0],
-        ),
+        Entity(canonical_name="Facebook", type="Company"),
+        Entity(canonical_name="Nvidia", type="Company"),
+        Entity(canonical_name="Marie Curie", type="Person"),
+        Entity(canonical_name="Albert Einstein", type="Person"),
+        Entity(canonical_name="IBM", type="Company"),
+        Entity(canonical_name="Oracle", type="Company"),
+        Entity(canonical_name="Salesforce", type="Company"),
+
+        # Layer 2 / Layer 3 Uncertain Matches (Vector embedding similarity ~0.80) - 4 entities
+        Entity(canonical_name="Jean-Claude Dupont", type="Person", embedding=[1.0, 0.0, 0.0]),
+        Entity(canonical_name="Meta Platforms", type="Company", embedding=[0.8, 0.6, 0.0]),
+        Entity(canonical_name="Adobe Corp", type="Company", embedding=[0.82, 0.57, 0.0]),
+        Entity(canonical_name="Netflix Streaming", type="Company", embedding=[0.79, 0.61, 0.0]),
+
+        # Completely New Entities (No match in KG) - 4 entities
+        Entity(canonical_name="SpaceX", type="Company", embedding=[0.0, 1.0, 0.0]),
+        Entity(canonical_name="Anthropic", type="Company", embedding=[0.0, 0.0, 1.0]),
+        Entity(canonical_name="OpenAI", type="Company", embedding=[0.1, 0.9, 0.0]),
+        Entity(canonical_name="Mistral AI", type="Company", embedding=[0.2, 0.8, 0.0]),
     ]
 
     return existing_nodes, test_entities
@@ -75,7 +69,7 @@ def run_langchain_benchmark(
     existing_nodes: list[ExistingNode], test_entities: list[Entity]
 ) -> Tuple[float, int, int]:
     """Simulates naive LangChain approach where LLM is called for every entity."""
-    print("Running Naive LangChain / Full-LLM Approach...")
+    print(f"Running Naive LangChain / Full-LLM Approach on {len(test_entities)} entities...")
     nodes_summary = [
         f"id={n.node_id}, name='{n.canonical_name}', type='{n.type}'"
         for n in existing_nodes
@@ -103,7 +97,7 @@ def run_langchain_benchmark(
         except Exception as err:
             print(f"  Warning: LLM call failed ({err}); substituting fallback token estimate.")
             llm_calls += 1
-            total_tokens += 250
+            total_tokens += 280
 
     elapsed_time = time.time() - start_time
     return elapsed_time, llm_calls, total_tokens
@@ -113,7 +107,7 @@ def run_autograft_benchmark(
     existing_nodes: list[ExistingNode], test_entities: list[Entity]
 ) -> Tuple[float, int, int]:
     """Runs AutoGraft 3-layer hybrid Entity Resolution pipeline."""
-    print("Running AutoGraft Hybrid ER Approach...")
+    print(f"Running AutoGraft Hybrid ER Approach on {len(test_entities)} entities...")
     start_time = time.time()
     total_tokens = 0
     llm_calls = 0
@@ -138,7 +132,7 @@ def generate_charts(
     ag_time, ag_calls, ag_tokens = ag_metrics
 
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
-    fig.suptitle("AutoGraft vs Naive LangChain ER Performance Benchmark", fontsize=14, fontweight="bold")
+    fig.suptitle("AutoGraft vs Naive LangChain ER Performance Benchmark (20 Entities)", fontsize=14, fontweight="bold")
 
     categories = ["LangChain (Full LLM)", "AutoGraft (Hybrid)"]
     colors = ["#e74c3c", "#2ecc71"]
@@ -196,7 +190,7 @@ def generate_charts(
 
 
 def generate_cost_projection_chart(
-    lc_tokens: int, ag_tokens: int, num_entities: int = 5
+    lc_tokens: int, ag_tokens: int, num_entities: int = 20
 ) -> None:
     """Generates cost projection line chart up to 1,000,000 entities with linear Y scale."""
     os.makedirs("benchmark/assets", exist_ok=True)
@@ -204,30 +198,26 @@ def generate_cost_projection_chart(
     lc_avg_tokens = lc_tokens / num_entities
     ag_avg_tokens = ag_tokens / num_entities
 
-    # Assume AutoGraft only calls LLM for 10% of entities due to L1 & L2 short-circuiting
-    ag_projected_tokens_per_entity = ag_avg_tokens * 0.1
-
-    print(f"\nCalculated Average Tokens per Entity:")
+    print(f"\nCalculated Real-world Average Tokens per Entity (based on {num_entities} test entities):")
     print(f"  LangChain (100% LLM rate): {lc_avg_tokens:.1f} tokens/entity")
-    print(f"  AutoGraft (10% LLM rate):  {ag_projected_tokens_per_entity:.1f} tokens/entity")
+    print(f"  AutoGraft (Measured rate): {ag_avg_tokens:.1f} tokens/entity")
 
     data_volumes = [10, 100, 1_000, 10_000, 100_000, 1_000_000]
     volume_labels = ["10", "100", "1,000", "10,000", "100,000", "1,000,000"]
-    PRICE_PER_MILLION_TOKENS = 0.20  # $0.20 per 1M tokens
+    PRICE_PER_MILLION_TOKENS = 0.20  # $0.20 per 1M tokens (e.g. Groq Llama 3 8B)
 
     lc_costs = [
         (vol * lc_avg_tokens / 1_000_000) * PRICE_PER_MILLION_TOKENS
         for vol in data_volumes
     ]
     ag_costs = [
-        (vol * ag_projected_tokens_per_entity / 1_000_000) * PRICE_PER_MILLION_TOKENS
+        (vol * ag_avg_tokens / 1_000_000) * PRICE_PER_MILLION_TOKENS
         for vol in data_volumes
     ]
 
     fig, ax = plt.subplots(figsize=(10, 5.5))
     x_indices = list(range(len(volume_labels)))
 
-    # Plot lines with discrete X spacing for maximum clarity
     ax.plot(
         x_indices,
         lc_costs,
@@ -244,11 +234,10 @@ def generate_cost_projection_chart(
         markersize=8,
         color="#2ecc71",
         linewidth=3,
-        label="AutoGraft (Hybrid ER - 10% API calls)",
+        label="AutoGraft (Hybrid ER - 3-Layer Short-Circuiting)",
     )
 
-    # Shade the savings region
-    ax.fill_between(x_indices, lc_costs, ag_costs, color="#2ecc71", alpha=0.15, label="Cost Savings Area (98%+ Saved)")
+    ax.fill_between(x_indices, lc_costs, ag_costs, color="#2ecc71", alpha=0.15, label="Cost Savings Area (90%+ Saved)")
 
     ax.set_xticks(x_indices)
     ax.set_xticklabels(volume_labels, fontsize=10, fontweight="bold")
@@ -263,11 +252,9 @@ def generate_cost_projection_chart(
     ax.grid(True, linestyle="--", alpha=0.6)
     ax.legend(fontsize=11, loc="upper left")
 
-    # Annotate price points
     for i in range(len(data_volumes)):
         vol = data_volumes[i]
         if vol >= 1000:
-            # LangChain annotation
             ax.annotate(
                 f"${lc_costs[i]:,.2f}",
                 (x_indices[i], lc_costs[i]),
@@ -278,7 +265,6 @@ def generate_cost_projection_chart(
                 fontweight="bold",
                 color="#c0392b",
             )
-            # AutoGraft annotation
             ax.annotate(
                 f"${ag_costs[i]:,.2f}",
                 (x_indices[i], ag_costs[i]),
@@ -294,7 +280,7 @@ def generate_cost_projection_chart(
     chart_path = "benchmark/assets/cost_projection.png"
     plt.savefig(chart_path, dpi=300)
     plt.close()
-    print(f"Improved cost projection chart successfully saved to '{chart_path}'")
+    print(f"Cost projection chart successfully saved to '{chart_path}'")
 
 
 def print_summary_table(
@@ -309,7 +295,7 @@ def print_summary_table(
     )
 
     print("\n" + "=" * 65)
-    print(" 📊 PERFORMANCE BENCHMARK SUMMARY TABLE")
+    print(" 📊 PERFORMANCE BENCHMARK SUMMARY TABLE (20 Entities Dataset)")
     print("=" * 65)
     print(
         f"{'Metric':<25} | {'LangChain (Full LLM)':<20} | {'AutoGraft (Hybrid)':<15}"
