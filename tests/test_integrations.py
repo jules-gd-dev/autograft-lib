@@ -43,7 +43,6 @@ def test_langchain_middleware_deduplication() -> None:
     mock_neo4j.add_graph_documents.assert_called_once()
 
 
-
 from autograft.integrations.llamaindex import AutoGraftLlamaIndexMiddleware
 
 
