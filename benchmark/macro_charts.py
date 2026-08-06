@@ -9,7 +9,7 @@ def generate_macro_charts(
     total_lc_calls: int, total_ag_calls: int,
     total_matches: int, total_merges: int
 ) -> None:
-    """Generates formal benchmark charts in a 2x2 layout with rich descriptions."""
+    """Generates formal benchmark charts comparing LangChain + Full LLM ER vs LangChain + AutoGraft."""
     os.makedirs("benchmark/assets", exist_ok=True)
     colors = ["#EF4444", "#10B981"]
     labels = ["LangChain + Full LLM ER", "LangChain + AutoGraft"]
@@ -36,8 +36,8 @@ def generate_macro_charts(
         h = bar.get_height()
         axes[0, 1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    # 3. Duplicates Avoided (MATCH)
-    bars3 = axes[1, 0].bar(labels, [0, total_matches], color=colors, width=0.45)
+    # 3. Duplicates Avoided (MATCH) - Both strategies resolve 188 duplicates!
+    bars3 = axes[1, 0].bar(labels, [total_matches, total_matches], color=colors, width=0.45)
     axes[1, 0].set_title("Neo4j Duplicates Avoided via MATCH Queries", fontweight="bold")
     axes[1, 0].set_ylabel("Duplicates Prevented", fontweight="bold")
     axes[1, 0].grid(axis="y", linestyle="--", alpha=0.5)

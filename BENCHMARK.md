@@ -14,9 +14,11 @@ AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs wh
 | **Extracted Graph Entities** | 742 entities | 742 entities | Identical Extraction Set |
 | **LLM ER API Calls** | 742 calls | **0 calls** | **100.0% Call Reduction** |
 | **Tokens Consumed** | 207,760 tokens | **0 tokens** | **100.0% Token Savings** |
-| **Duplicates Avoided (`MATCH`)** | 0 queries (188 duplicates) | **188 queries** | **188 Graph Duplicates Avoided** |
-| **New Nodes Created (`MERGE`)** | 742 queries | **554 queries** | Clean Deduplicated Graph |
+| **Duplicates Avoided (`MATCH`)** | **188 queries** | **188 queries** | **Identical Graph Deduplication** |
+| **New Nodes Created (`MERGE`)** | **554 queries** | **554 queries** | Clean Deduplicated Graph |
 | **Estimated LLM API Cost** | $0.04155 | **$0.00000** | **100.0% Cost Reduction** |
+
+*Note: While LangChain + Full LLM ER achieves deduplication, it requires 207,760 LLM tokens and 742 API calls. AutoGraft achieves the exact same clean Knowledge Graph with 0 tokens and 0 API calls.*
 
 ---
 
@@ -38,8 +40,8 @@ The macro benchmark suite evaluates **200 real-world enterprise documents** acro
 *Detailed Metric Breakdown:*
 - **Top-Left (Total Tokens Consumed)**: Compares total Entity Resolution API tokens spent across 200 documents (207,760 tokens for LangChain + Full LLM ER vs 0 tokens for AutoGraft).
 - **Top-Right (LLM ER API Calls)**: Evaluates total external API calls dispatched (742 calls for LangChain + Full LLM ER vs 0 calls short-circuited locally by AutoGraft).
-- **Bottom-Left (Neo4j Duplicates Avoided)**: Highlights exact graph duplicates prevented via Neo4j `MATCH` queries (188 duplicate nodes prevented).
-- **Bottom-Right (MATCH Queries by Industry)**: Industry breakdown of deduplication queries resolved locally across Legal (48), Tech (46), Insurance (47), and Finance (47).
+- **Bottom-Left (Neo4j Duplicates Avoided)**: Highlights exact graph duplicates prevented via Neo4j `MATCH` queries (188 duplicate nodes prevented by both approaches).
+- **Bottom-Right (MATCH Queries by Industry)**: Industry breakdown of deduplication queries resolved locally across Legal (83), Tech (40), Insurance (35), and Finance (30).
 
 #### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1,000,000 Documents)
 ![Figure 1.2: Linear Financial Cost Scaling Projection up to 1,000,000 Documents](benchmark/assets/macro_cost_scaling_1m.png)
