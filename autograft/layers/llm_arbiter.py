@@ -1,5 +1,6 @@
 """Layer 3: LLM Arbitration for ambiguous entity resolution cases using LiteLLM."""
 import os
+from typing import Tuple, Union
 from dotenv import load_dotenv
 import litellm
 from autograft.models.entities import Entity, ExistingNode, MatchResult
@@ -10,13 +11,17 @@ load_dotenv()
 def _ask_llm(
     prompt: str,
     model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama3-8b-8192"),
-) -> str:
-    """Calls litellm completion and returns response content string."""
+) -> Union[str, Tuple[str, int]]:
+    """Calls litellm completion and returns (content_string, total_tokens)."""
     response = litellm.completion(
         model=model,
         messages=[{"role": "user", "content": prompt}],
     )
-    return str(response.choices[0].message.content)
+    content = str(response.choices[0].message.content)
+    tokens = 0
+    if hasattr(response, "usage") and response.usage:
+        tokens = getattr(response.usage, "total_tokens", 0) or 0
+    return content, tokens
 
 
 def arbitrate_match(
@@ -34,12 +39,22 @@ def arbitrate_match(
         "Do Entity 1 and Entity 2 represent the exact same entity in the real world?\n"
         "Answer STRICTLY with the word 'OUI' or 'NON'."
     )
-    response_text = _ask_llm(prompt, model=model)
+    res = _ask_llm(prompt, model=model)
+    if isinstance(res, tuple):
+        response_text, tokens_used = res
+    else:
+        response_text, tokens_used = str(res), 0
+
     if "OUI" in response_text.upper():
         return MatchResult(
             is_match=True,
             matched_node_id=existing_node.node_id,
             score=1.0,
             layer="llm_arbiter",
+            tokens_used=tokens_used,
         )
-    return MatchResult(is_match=False, layer="llm_arbiter")
+    return MatchResult(
+        is_match=False,
+        layer="llm_arbiter",
+        tokens_used=tokens_used,
+    )

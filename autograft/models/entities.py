@@ -24,9 +24,10 @@ class ExistingNode(BaseModel):
 
 
 class MatchResult(BaseModel):
-    """Represents the result of a Layer 1 ER check."""
+    """Represents the result of an ER layer check."""
 
     is_match: bool
     matched_node_id: Optional[str] = None
     score: float = 0.0
     layer: str = "deterministic"
+    tokens_used: int = 0
