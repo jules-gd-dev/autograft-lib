@@ -8,7 +8,7 @@ This document provides technical documentation of the evaluation methodology, da
 
 ## 1. Executive Summary
 
-AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs while achieving **100% token cost reduction** on Entity Resolution tasks. Across a macro suite of **200 real-world enterprise documents** spanning 4 key industries, AutoGraft processed 742 extracted entities without invoking a single unnecessary LLM Entity Resolution API call.
+AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs while achieving **100% token cost reduction** on Entity Resolution tasks. Across a massive suite of **660 real-world enterprise documents** spanning 10 key industries, AutoGraft processed 2,448 extracted entities without invoking a single unnecessary LLM Entity Resolution API call.
 
 *LLM Engine Infrastructure*:
 - **Extraction & ER Layer**: `groq/llama-3.1-8b-instant`
@@ -16,14 +16,14 @@ AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs wh
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| Evaluated Documents | 200 documents | 200 documents | 200 documents |
-| Extracted Graph Entities | 742 entities | 742 entities | 742 entities |
-| LLM ER API Calls | 0 calls | 742 calls | 0 calls *(100% Local Short-Circuit)* |
-| Tokens Consumed | 0 tokens | 207,760 tokens | 0 tokens *(100% Token Savings)* |
-| Duplicates Created | 188 duplicates | 0 duplicates | 0 duplicates |
-| Duplicates Avoided (`MATCH`) | 0 queries | 188 queries | 188 queries |
-| New Nodes Created (`MERGE`) | 742 queries | 554 queries | 554 queries |
-| Estimated LLM API Cost | $0.00000 | $0.04155 | $0.00000 |
+| Evaluated Documents | 660 documents | 660 documents | 660 documents |
+| Extracted Graph Entities | 2448 entities | 2448 entities | 2448 entities |
+| LLM ER API Calls | 0 calls | 2448 calls | 0 calls *(100% Local Short-Circuit)* |
+| Tokens Consumed | 0 tokens | 685,608 tokens | 0 tokens *(100% Token Savings)* |
+| Duplicates Created | 620 duplicates | 0 duplicates | 0 duplicates |
+| Duplicates Avoided (`MATCH`) | 0 queries | 620 queries | 620 queries |
+| New Nodes Created (`MERGE`) | 2448 queries | 1828 queries | 1828 queries |
+| Estimated LLM API Cost | $0.00000 | $0.13712 | $0.00000 |
 | Knowledge Graph Quality | Polluted with Duplicates | Deduplicated (Expensive) | Deduplicated & Cost-Free |
 
 ---
