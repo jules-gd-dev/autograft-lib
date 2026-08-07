@@ -61,6 +61,28 @@ Pour 1,000,000 de documents, AutoGraft maintient **$0.00** de coût LLM API pour
 
 ---
 
+## Configuration & Clés API
+
+AutoGraft peut être configuré via des variables d'environnement (`.env`) ou dynamiquement via la classe `AutoGraftConfig`.
+
+```python
+from autograft import AutoGraftConfig
+from autograft.integrations import AutoGraftNeo4jMiddleware
+
+config = AutoGraftConfig(
+    model="openai/gpt-4o",
+    api_key="sk-...",
+    api_base="https://custom.endpoint/v1",  # Optionnel : proxy, Azure, Ollama
+    match_threshold=0.85,
+    id_attr="id",
+    aliases_attr="aliases",
+    matching_algorithm="token_sort_ratio"
+)
+autograft_graph = AutoGraftNeo4jMiddleware(graph, config=config)
+```
+
+---
+
 ## Architecture (Court-Circuit à 3 Couches)
 
 1. **Couche 1 (Déterministe)** : Correspondance exacte & alias via rapidfuzz (0 token, 0.1ms).

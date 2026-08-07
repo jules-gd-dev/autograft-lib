@@ -61,6 +61,28 @@ pip install autograft
 
 ---
 
+## 配置与 API 密钥
+
+AutoGraft 可以通过环境变量 (`.env`) 或以编程方式通过 `AutoGraftConfig` 类进行配置。
+
+```python
+from autograft import AutoGraftConfig
+from autograft.integrations import AutoGraftNeo4jMiddleware
+
+config = AutoGraftConfig(
+    model="openai/gpt-4o",
+    api_key="sk-...",
+    api_base="https://custom.endpoint/v1",  # 可选：用于代理、Azure 或本地 LLM
+    match_threshold=0.85,
+    id_attr="id",
+    aliases_attr="aliases",
+    matching_algorithm="token_sort_ratio"
+)
+autograft_graph = AutoGraftNeo4jMiddleware(graph, config=config)
+```
+
+---
+
 ## 架构 (3 层短路机制)
 
 1. **第 1 层 (确定性)**: 通过 rapidfuzz 进行精确字符串及别名匹配 (0 token, 0.1ms)。

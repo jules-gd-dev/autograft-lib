@@ -1,5 +1,7 @@
 # AutoGraft Benchmark Methodology & Empirical Results
 
+*(Note: The latest benchmark suite below was executed on AutoGraft `v0.0.1`)*
+
 This document provides technical documentation of the evaluation methodology, dataset composition, and empirical benchmark results for AutoGraft's 3-layer hybrid Entity Resolution (ER) middleware compared against naive GraphRAG pipelines.
 
 ---
