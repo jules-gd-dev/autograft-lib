@@ -73,7 +73,7 @@ pip install autograft
 
 AutoGraft 为 **LangChain** 和 **LlamaIndex** 提供原生的 1 行集成代码。
 
-### 🦜🔗 LangChain
+### LangChain
 
 ```python
 from langchain_community.graphs import Neo4jGraph
@@ -86,7 +86,7 @@ autograft_graph = AutoGraftNeo4jMiddleware(graph)
 autograft_graph.add_graph_documents(extracted_graph_documents)
 ```
 
-### 🦙 LlamaIndex
+### LlamaIndex
 
 ```python
 from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore

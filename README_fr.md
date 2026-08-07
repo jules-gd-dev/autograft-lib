@@ -73,7 +73,7 @@ Pour 1,000,000 de documents, AutoGraft maintient **$0.00** de coût LLM API pour
 
 AutoGraft fournit des intégrations natives en 1 ligne pour **LangChain** et **LlamaIndex**. 
 
-### 🦜🔗 LangChain
+### LangChain
 
 ```python
 from langchain_community.graphs import Neo4jGraph
@@ -86,7 +86,7 @@ autograft_graph = AutoGraftNeo4jMiddleware(graph)
 autograft_graph.add_graph_documents(extracted_graph_documents)
 ```
 
-### 🦙 LlamaIndex
+### LlamaIndex
 
 ```python
 from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
