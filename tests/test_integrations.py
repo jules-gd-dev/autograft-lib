@@ -83,6 +83,7 @@ def test_llamaindex_middleware_deduplication() -> None:
 def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     """Test source and target node remapping and cache initialization for new node types."""
     mock_neo4j = MagicMock()
+
     def mock_query(query: str) -> list[dict]:
         if "Company" in query:
             return [{"id": "Apple Inc.", "aliases": ["Apple"]}]
