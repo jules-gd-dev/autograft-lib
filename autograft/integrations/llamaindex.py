@@ -45,7 +45,7 @@ class AutoGraftLlamaIndexMiddleware:
                 self._node_cache[label] = []
                 with contextlib.suppress(Exception):
                     # Access the underlying Neo4j driver from LlamaIndex's store
-                    query = f"MATCH (n:`{label}`) RETURN n.id AS id, n.aliases AS aliases LIMIT 10000"
+                    query = f"MATCH (n:`{label}`) RETURN n.{self.config.id_attr} AS id, n.{self.config.aliases_attr} AS aliases LIMIT 10000"
                     results, _ = self.store.structured_query(query)
                     for r in results:
                         node_id = str(r.get("id") or "")

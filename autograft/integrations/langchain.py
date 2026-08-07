@@ -43,7 +43,7 @@ class AutoGraftNeo4jMiddleware:
             if label not in self._node_cache:
                 self._node_cache[label] = []
                 with contextlib.suppress(Exception):
-                    query = f"MATCH (n:`{label}`) RETURN n.id AS id, n.aliases AS aliases LIMIT 10000"
+                    query = f"MATCH (n:`{label}`) RETURN n.{self.config.id_attr} AS id, n.{self.config.aliases_attr} AS aliases LIMIT 10000"
                     results = self.graph.query(query)
                     for r in results:
                         node_id = str(r.get("id") or "")
