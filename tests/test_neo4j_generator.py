@@ -28,4 +28,4 @@ def test_generate_update_query() -> None:
     query = generate_merge_query(new_entity, match_result)
 
     assert "MATCH" in query
-    assert "node_123" in query
+    assert "$node_id" in query
