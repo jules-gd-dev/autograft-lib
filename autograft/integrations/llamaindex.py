@@ -131,7 +131,15 @@ class AutoGraftLlamaIndexMiddleware:
     def upsert_nodes(self, nodes: list[EntityNode]) -> None:
         """Intercepts, deduplicates, and passes nodes to LlamaIndex's store."""
         for node in nodes:
-            entity = Entity(canonical_name=str(node.name), type=str(node.label))
+            embedding = None
+            if hasattr(node, "properties") and isinstance(node.properties, dict):
+                embedding = node.properties.get(self.config.embedding_attr)
+
+            entity = Entity(
+                canonical_name=str(node.name),
+                type=str(node.label),
+                embedding=embedding,
+            )
             match_result = resolve_entity(entity, db_client=self, config=self.config)
 
             if match_result.is_match:

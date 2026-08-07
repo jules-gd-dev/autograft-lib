@@ -136,7 +136,16 @@ class AutoGraftNeo4jMiddleware:
 
             # 1. Resolve Nodes
             for node in doc.nodes:
-                entity = Entity(canonical_name=str(node.id), type=str(node.type))
+                # Extract embedding from properties if it exists
+                embedding = None
+                if hasattr(node, "properties") and isinstance(node.properties, dict):
+                    embedding = node.properties.get(self.config.embedding_attr)
+
+                entity = Entity(
+                    canonical_name=str(node.id),
+                    type=str(node.type),
+                    embedding=embedding,
+                )
                 match_result = resolve_entity(
                     entity, db_client=self, config=self.config
                 )
