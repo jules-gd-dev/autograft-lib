@@ -16,7 +16,7 @@ def generate_macro_charts(
 
     # Figure 1.1: Macro Benchmark Metrics Chart (2x2 Layout)
     fig, axes = plt.subplots(2, 2, figsize=(15, 11))
-    fig.suptitle("Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (200 Docs / 4 Industries)", fontsize=15, fontweight="bold", y=0.98)
+    fig.suptitle("Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (660 Docs / 10 Industries)", fontsize=15, fontweight="bold", y=0.98)
 
     # 1. Total Tokens Consumed
     bars1 = axes[0, 0].bar(labels, [0, total_lc_tokens, total_ag_tokens], color=colors, width=0.45)
@@ -36,7 +36,7 @@ def generate_macro_charts(
         h = bar.get_height()
         axes[0, 1].annotate(f"{int(h)}", (bar.get_x() + bar.get_width() / 2, h), ha="center", va="bottom", xytext=(0, 4), textcoords="offset points", fontweight="bold")
 
-    # 3. Duplicates Avoided (MATCH) - Naive creates 188 duplicates!
+    # 3. Duplicates Avoided (MATCH) - Naive creates duplicates!
     bars3 = axes[1, 0].bar(labels, [0, total_matches, total_matches], color=colors, width=0.45)
     axes[1, 0].set_title("Neo4j Duplicates Avoided via MATCH Queries", fontweight="bold")
     axes[1, 0].set_ylabel("Duplicates Prevented", fontweight="bold")
@@ -62,8 +62,8 @@ def generate_macro_charts(
 
     # Figure 1.2: Cost Scaling Chart up to 1M documents
     volumes = [10, 100, 1000, 10000, 100000, 1000000]
-    lc_avg = total_lc_tokens / 200 if total_lc_tokens > 0 else 280
-    ag_avg = total_ag_tokens / 200
+    lc_avg = total_lc_tokens / 660 if total_lc_tokens > 0 else 280
+    ag_avg = total_ag_tokens / 660
 
     lc_costs = [(v * lc_avg / 1_000_000) * 0.20 for v in volumes]
     ag_costs = [(v * ag_avg / 1_000_000) * 0.20 for v in volumes]

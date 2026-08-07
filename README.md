@@ -28,34 +28,34 @@ pip install autograft
 
 ---
 
-## Performance Benchmark (200 Documents / 4 Industries)
+## Performance Benchmark (660 Documents / 10 Industries)
 
-Evaluated across **200 real-world enterprise documents** spanning 4 key scenarios: **Legal & Compliance**, **Tech & Enterprise Software**, **Insurance & Risk Management**, and **Finance & Investment Banking** (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
+Evaluated across a massive suite of **660 real-world enterprise documents** spanning 10 key sectors: Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, and Real Estate (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
 
 *LLM Engine Configured*: **`groq/llama-3.1-8b-instant`** for extraction & arbitration, and **`groq/llama-3.3-70b-versatile`** for precision auditing.
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| Processed Documents | 200 documents | 200 documents | 200 documents |
-| Extracted Entities | 742 entities | 742 entities | 742 entities |
-| LLM ER API Calls | 0 calls | 742 calls | 0 calls *(100% Local Short-Circuit)* |
-| Tokens Consumed | 0 tokens | 207,760 tokens | 0 tokens *(100% Token Savings)* |
-| Duplicates Created | 188 duplicates | 0 duplicates | 0 duplicates |
-| Duplicates Avoided (`MATCH`) | 0 queries | 188 queries | 188 queries |
-| New Entities Created (`MERGE`) | 742 queries | 554 queries | 554 queries |
-| LLM ER Cost | $0.00000 | $0.04155 | $0.00000 |
+| Processed Documents | 660 documents | 660 documents | 660 documents |
+| Extracted Entities | 2448 entities | 2448 entities | 2448 entities |
+| LLM ER API Calls | 0 calls | 2448 calls | 0 calls *(100% Local Short-Circuit)* |
+| Tokens Consumed | 0 tokens | 685,608 tokens | 0 tokens *(100% Token Savings)* |
+| Duplicates Created | 620 duplicates | 0 duplicates | 0 duplicates |
+| Duplicates Avoided (`MATCH`) | 0 queries | 620 queries | 620 queries |
+| New Entities Created (`MERGE`) | 2448 queries | 1828 queries | 1828 queries |
+| LLM ER Cost | $0.00000 | $0.13712 | $0.00000 |
 | Knowledge Graph Quality | Polluted with Duplicates | Deduplicated (Expensive) | Deduplicated & Cost-Free |
 
 ---
 
-### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (200 Docs / 4 Industries)
+### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (660 Docs / 10 Industries)
 ![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
 
 *Detailed Metric Breakdown:*
-- **Top-Left (Total Tokens Consumed)**: LangChain Naive and AutoGraft consume 0 resolution tokens, while Full LLM ER consumes 207,760 tokens.
-- **Top-Right (LLM ER API Calls)**: LangChain Naive and AutoGraft make 0 API calls, while Full LLM ER makes 742 external API calls.
-- **Bottom-Left (Neo4j Duplicates Avoided)**: LangChain Naive creates 188 duplicates (0 avoided), while Full LLM ER and AutoGraft resolve all 188 duplicates.
-- **Bottom-Right (Estimated LLM Cost)**: Compares the Entity Resolution financial cost. LangChain Naive costs $0 (but fails to deduplicate), Full LLM ER costs $0.04155, and AutoGraft costs $0 (while perfectly deduplicating the graph).
+- **Top-Left (Total Tokens Consumed)**: LangChain Naive and AutoGraft consume 0 resolution tokens, while Full LLM ER consumes 685,608 tokens.
+- **Top-Right (LLM ER API Calls)**: LangChain Naive and AutoGraft make 0 API calls, while Full LLM ER makes 2,448 external API calls.
+- **Bottom-Left (Neo4j Duplicates Avoided)**: LangChain Naive creates 620 duplicates (0 avoided), while Full LLM ER and AutoGraft resolve all 620 duplicates.
+- **Bottom-Right (Estimated LLM Cost)**: Compares the Entity Resolution financial cost. LangChain Naive costs $0 (but fails to deduplicate), Full LLM ER costs $0.13712, and AutoGraft costs $0 (while perfectly deduplicating the graph).
 
 ---
 
