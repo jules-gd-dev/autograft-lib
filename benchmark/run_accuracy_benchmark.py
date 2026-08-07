@@ -2,10 +2,10 @@
 import os
 import sys
 import time
-from typing import Tuple
-from dotenv import load_dotenv
-import matplotlib.pyplot as plt
+
 import litellm
+import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 
 from autograft.layers.llm_arbiter import arbitrate_match
 from autograft.models.entities import Entity, ExistingNode
@@ -27,7 +27,7 @@ def print_progress(current: int, total: int, prefix: str = "Progress", length: i
         sys.stdout.write("\n")
 
 
-def generate_domain_datasets() -> dict[str, list[Tuple[Entity, ExistingNode, bool]]]:
+def generate_domain_datasets() -> dict[str, list[tuple[Entity, ExistingNode, bool]]]:
     """Generates 50 real-world entity resolution test cases for each of the 11 domains."""
     
     # 1. Tech Companies (50 cases)
@@ -347,7 +347,7 @@ def generate_domain_datasets() -> dict[str, list[Tuple[Entity, ExistingNode, boo
     }
 
 
-def build_tricky_dataset() -> list[Tuple[str, Entity, ExistingNode, bool]]:
+def build_tricky_dataset() -> list[tuple[str, Entity, ExistingNode, bool]]:
     """Builds an interleaved round-robin dataset of 550 test cases across 11 domains (50 cases each)."""
     domain_data = generate_domain_datasets()
     domain_names = list(domain_data.keys())
@@ -367,7 +367,7 @@ def verify_decision(
     autograft_decision: bool,
     expected_match: bool,
     judge_model: str = JUDGE_MODEL,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Uses a Judge LLM to verify if AutoGraft's entity resolution decision is correct."""
     if autograft_decision == expected_match:
         return True, "✅ CORRECT"

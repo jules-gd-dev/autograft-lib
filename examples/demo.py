@@ -1,6 +1,8 @@
 """End-to-end demonstration script for AutoGraft middleware."""
 import os
+
 from dotenv import load_dotenv
+
 from autograft import Entity, ExistingNode, resolve_and_generate_cypher
 from autograft.layers.llm_arbiter import arbitrate_match
 

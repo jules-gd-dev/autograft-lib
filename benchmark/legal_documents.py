@@ -1,5 +1,6 @@
 """Legal documents dataset and existing Knowledge Graph nodes for the Legal Team RAG benchmark."""
 from langchain_core.documents import Document
+
 from autograft.models.entities import ExistingNode
 
 

@@ -1,9 +1,8 @@
 """Verification script to test homonym resolution logic and output results."""
-import json
-from autograft import Entity, resolve_and_generate_cypher
+from autograft import Entity
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import ExistingNode
-from autograft.config import AutoGraftConfig
+
 
 def verify_homonyms():
     print("--- STARTING HOMONYM VERIFICATION ---")

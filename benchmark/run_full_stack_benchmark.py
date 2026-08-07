@@ -3,8 +3,9 @@ import json
 import os
 import sys
 import time
-from dotenv import load_dotenv
+
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_openai import ChatOpenAI
@@ -133,7 +134,7 @@ def run_full_stack_benchmark() -> None:
     with open("benchmark/assets/full_stack_report.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
 
-    print(f"\nAudit summary JSON and charts saved in 'benchmark/assets/'")
+    print("\nAudit summary JSON and charts saved in 'benchmark/assets/'")
 
 
 if __name__ == "__main__":

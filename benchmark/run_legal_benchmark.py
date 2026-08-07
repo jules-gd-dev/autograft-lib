@@ -3,8 +3,9 @@ import json
 import os
 import sys
 import time
-from dotenv import load_dotenv
+
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_openai import ChatOpenAI
 
@@ -158,7 +159,7 @@ def run_legal_benchmark() -> None:
         f.write("\n".join(report_lines))
 
     print("\n\n" + "\n".join(report_lines))
-    print(f"📄 Legal audit JSON and charts saved in 'benchmark/assets/'")
+    print("📄 Legal audit JSON and charts saved in 'benchmark/assets/'")
 
 
 if __name__ == "__main__":
