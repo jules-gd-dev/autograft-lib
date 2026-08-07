@@ -100,6 +100,11 @@ def arbitrate_match(
                 layer="llm_arbiter",
                 tokens_used=tokens_used,
             )
+        
+        import logging
+        logger = logging.getLogger("autograft.resolver")
+        logger.info(f"LLM Arbiter explicitly declined merge between '{new_entity.canonical_name}' and '{existing_node.canonical_name}'")
+
         return MatchResult(
             is_match=False,
             layer="llm_arbiter",

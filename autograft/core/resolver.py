@@ -1,8 +1,11 @@
+import logging
 from autograft.config import AutoGraftConfig
 from autograft.layers.deterministic import find_exact_match
 from autograft.layers.llm_arbiter import arbitrate_match
 from autograft.layers.semantic import find_semantic_match
 from autograft.models.entities import Entity, ExistingNode, MatchResult
+
+logger = logging.getLogger("autograft.resolver")
 
 
 def resolve_entity(
@@ -26,6 +29,10 @@ def resolve_entity(
     filtered_nodes = [
         n for n in existing_nodes if n.type.lower() == new_entity.type.lower()
     ]
+
+    if not filtered_nodes:
+        logger.debug(f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.name}'")
+        return MatchResult(is_match=False)
 
     # Layer 1: Deterministic
     exact_result = find_exact_match(new_entity, filtered_nodes, config=cfg)
@@ -54,4 +61,5 @@ def resolve_entity(
         if matched_node is not None:
             return arbitrate_match(new_entity, matched_node, config=cfg)
 
+    logger.debug(f"Declined merge: No candidate found for '{new_entity.name}'")
     return MatchResult(is_match=False)
