@@ -96,3 +96,30 @@ def test_missing_embedding() -> None:
     result = find_semantic_match(new_entity, existing_nodes)
     assert result.is_match is False
     assert result.matched_node_id is None
+
+
+def test_existing_node_missing_embedding() -> None:
+    """Test when an existing node in existing_nodes has embedding=None."""
+    new_entity = Entity(
+        canonical_name="Apple",
+        type="Company",
+        embedding=[1.0, 0.0, 0.0],
+    )
+    existing_nodes = [
+        ExistingNode(
+            node_id="node_no_emb",
+            canonical_name="No Emb Node",
+            type="Company",
+            embedding=None,
+        ),
+        ExistingNode(
+            node_id="node_1",
+            canonical_name="Apple Inc.",
+            type="Company",
+            embedding=[1.0, 0.0, 0.0],
+        ),
+    ]
+
+    result = find_semantic_match(new_entity, existing_nodes)
+    assert result.is_match is True
+    assert result.matched_node_id == "node_1"

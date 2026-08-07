@@ -78,3 +78,66 @@ def test_llamaindex_middleware_deduplication() -> None:
 
     # Assert underlying store was called
     mock_store.upsert_nodes.assert_called_once()
+
+
+def test_langchain_middleware_relationship_remapping_and_cache() -> None:
+    """Test source and target node remapping and cache initialization for new node types."""
+    mock_neo4j = MagicMock()
+    # Mock Neo4j query returning existing canonical nodes for both types
+    mock_neo4j.query.side_effect = [
+        [{"id": "Apple Inc.", "aliases": ["Apple"]}],
+        [{"id": "iPhone 15", "aliases": ["iPhone"]}],
+    ]
+
+    middleware = AutoGraftNeo4jMiddleware(mock_neo4j)
+
+    node_apple = Node(id="Apple", type="Company")
+    node_iphone = Node(id="iPhone", type="Product")
+    rel = Relationship(source=node_apple, target=node_iphone, type="PRODUCES")
+    doc = GraphDocument(
+        nodes=[node_apple, node_iphone],
+        relationships=[rel],
+        source=Document(page_content="Apple produces iPhone."),
+    )
+
+    middleware.add_graph_documents([doc])
+
+    # Assert both source and target relationships remapped
+    assert doc.relationships[0].source.id == "Apple Inc."
+    assert doc.relationships[0].target.id == "iPhone 15"
+
+    # Now add document with an uncached node type to hit self._node_cache[node.type] = []
+    node_new = Node(id="UncachedEntity", type="UncachedType")
+    doc_uncached = GraphDocument(
+        nodes=[node_new], relationships=[], source=Document(page_content="")
+    )
+    middleware.add_graph_documents([doc_uncached])
+    assert "UncachedType" in middleware._node_cache
+
+
+def test_llamaindex_middleware_relations_and_getattr() -> None:
+    """Test upsert_relations, uncached label, and store method delegation via __getattr__."""
+    mock_store = MagicMock()
+    mock_store.custom_store_method.return_value = "delegated_result"
+    mock_store.structured_query.return_value = ([], None)
+
+    middleware = AutoGraftLlamaIndexMiddleware(mock_store)
+
+    class MutableMockEntityNode:
+        def __init__(self, name, label):
+            self.name = name
+            self.label = label
+
+    # Upsert node with uncached label
+    middleware.upsert_nodes([MutableMockEntityNode(name="BrandNew", label="NewLabel")])
+    assert "NewLabel" in middleware._node_cache
+
+    # Test upsert_relations
+    relations = [MagicMock()]
+    middleware.upsert_relations(relations)
+    mock_store.upsert_relations.assert_called_once_with(relations)
+
+    # Test __getattr__ delegation
+    result = middleware.custom_store_method("arg1")
+    assert result == "delegated_result"
+    mock_store.custom_store_method.assert_called_once_with("arg1")
