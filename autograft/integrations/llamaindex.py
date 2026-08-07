@@ -3,6 +3,7 @@
 import contextlib
 from typing import TYPE_CHECKING, Any
 
+from autograft.config import AutoGraftConfig
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import Entity, ExistingNode
 
@@ -18,8 +19,22 @@ else:
 class AutoGraftLlamaIndexMiddleware:
     """Plug & Play LlamaIndex PropertyGraphStore wrapper for zero-cost entity resolution."""
 
-    def __init__(self, neo4j_store: Neo4jPropertyGraphStore):
+    def __init__(
+        self,
+        neo4j_store: Neo4jPropertyGraphStore,
+        config: AutoGraftConfig | None = None,
+        model: str | None = None,
+        api_key: str | None = None,
+        api_base: str | None = None,
+    ):
         self.store = neo4j_store
+        self.config = config or AutoGraftConfig()
+        if model:
+            self.config.model = model
+        if api_key:
+            self.config.api_key = api_key
+        if api_base:
+            self.config.api_base = api_base
         self._node_cache: dict[str, list[ExistingNode]] = {}
 
     def _fetch_cached_nodes(self, labels: set[str]) -> list[ExistingNode]:
@@ -54,7 +69,7 @@ class AutoGraftLlamaIndexMiddleware:
 
         for node in nodes:
             entity = Entity(canonical_name=str(node.name), type=str(node.label))
-            match_result = resolve_entity(entity, existing_nodes)
+            match_result = resolve_entity(entity, existing_nodes, config=self.config)
 
             if match_result.is_match:
                 # Canonicalize the new node's name (which acts as ID in LlamaIndex)
