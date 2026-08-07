@@ -180,7 +180,7 @@ def test_langchain_middleware_semantic_match() -> None:
     # Test Exception Handling in semantic candidates
     def mock_query_err(query: str, **kwargs) -> list[dict]:
         if "db.index.vector.queryNodes" in query:
-            raise Exception("Index missing")
+            raise ValueError("Index missing")
         return []
 
     mock_neo4j.query.side_effect = mock_query_err
@@ -234,7 +234,7 @@ def test_llamaindex_middleware_semantic_match() -> None:
     # Test Exception Handling
     def mock_structured_query_err(query: str, **kwargs) -> tuple[list[dict], None]:
         if "db.index.vector.queryNodes" in query:
-            raise Exception("Index missing")
+            raise ValueError("Index missing")
         return [], None
 
     mock_store.structured_query.side_effect = mock_structured_query_err
