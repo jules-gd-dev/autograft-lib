@@ -19,16 +19,13 @@ class GraphDatabaseClient(Protocol):
 
 class ListDatabaseClient:
     """A client that operates on an in-memory list of nodes for backward compatibility."""
-    
+
     def __init__(self, nodes: list[ExistingNode]):
         self.nodes = nodes
-        
+
     def find_exact_candidates(self, entity: Entity) -> list[ExistingNode]:
-        return [
-            n for n in self.nodes 
-            if n.type.lower() == entity.type.lower()
-        ]
-        
+        return [n for n in self.nodes if n.type.lower() == entity.type.lower()]
+
     def find_semantic_candidates(
         self, entity: Entity, limit: int = 5
     ) -> list[ExistingNode]:

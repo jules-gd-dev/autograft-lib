@@ -59,7 +59,11 @@ def resolve_entity(
         and semantic_result.matched_node_id is not None
     ):
         matched_node = next(
-            (n for n in semantic_candidates if n.node_id == semantic_result.matched_node_id),
+            (
+                n
+                for n in semantic_candidates
+                if n.node_id == semantic_result.matched_node_id
+            ),
             None,
         )
         if matched_node is not None:

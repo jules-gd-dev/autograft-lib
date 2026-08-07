@@ -68,7 +68,9 @@ class AutoGraftLlamaIndexMiddleware:
         LIMIT 100
         """
         try:
-            results, _ = self.store.structured_query(query, param_map={"name": entity.canonical_name})
+            results, _ = self.store.structured_query(
+                query, param_map={"name": entity.canonical_name}
+            )
             nodes = []
             for r in results:
                 node_id = str(r.get("id") or "")
@@ -92,10 +94,10 @@ class AutoGraftLlamaIndexMiddleware:
         """Queries Neo4j vector index for semantic candidates."""
         if not entity.embedding:
             return []
-            
+
         self._ensure_vector_index(entity.type)
         index_name = f"autograft_{entity.type.lower()}_vector_index"
-        
+
         query = f"""
         CALL db.index.vector.queryNodes($index_name, $limit, $embedding)
         YIELD node, score
@@ -103,12 +105,12 @@ class AutoGraftLlamaIndexMiddleware:
         """
         try:
             results, _ = self.store.structured_query(
-                query, 
+                query,
                 param_map={
                     "index_name": index_name,
                     "limit": limit,
-                    "embedding": entity.embedding
-                }
+                    "embedding": entity.embedding,
+                },
             )
             nodes = []
             for r in results:

@@ -90,10 +90,10 @@ class AutoGraftNeo4jMiddleware:
         """Queries Neo4j vector index for semantic candidates."""
         if not entity.embedding:
             return []
-            
+
         self._ensure_vector_index(entity.type)
         index_name = f"autograft_{entity.type.lower()}_vector_index"
-        
+
         query = f"""
         CALL db.index.vector.queryNodes($index_name, $limit, $embedding)
         YIELD node, score
@@ -101,12 +101,12 @@ class AutoGraftNeo4jMiddleware:
         """
         try:
             results = self.graph.query(
-                query, 
+                query,
                 params={
                     "index_name": index_name,
                     "limit": limit,
-                    "embedding": entity.embedding
-                }
+                    "embedding": entity.embedding,
+                },
             )
             nodes = []
             for r in results:
@@ -122,7 +122,9 @@ class AutoGraftNeo4jMiddleware:
                     )
             return nodes
         except Exception as e:  # noqa: BLE001
-            logger.debug(f"Vector search failed for {entity.type} (index might be missing): {e}")
+            logger.debug(
+                f"Vector search failed for {entity.type} (index might be missing): {e}"
+            )
             return []
 
     def add_graph_documents(
