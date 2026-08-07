@@ -3,6 +3,7 @@
 import contextlib
 from typing import TYPE_CHECKING, Any
 
+from autograft.config import AutoGraftConfig
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import Entity, ExistingNode
 
@@ -17,8 +18,22 @@ else:
 class AutoGraftNeo4jMiddleware:
     """Plug & Play LangChain Neo4jGraph wrapper for zero-cost entity resolution."""
 
-    def __init__(self, neo4j_graph: Neo4jGraph):
+    def __init__(
+        self,
+        neo4j_graph: Neo4jGraph,
+        config: AutoGraftConfig | None = None,
+        model: str | None = None,
+        api_key: str | None = None,
+        api_base: str | None = None,
+    ):
         self.graph = neo4j_graph
+        self.config = config or AutoGraftConfig()
+        if model:
+            self.config.model = model
+        if api_key:
+            self.config.api_key = api_key
+        if api_base:
+            self.config.api_base = api_base
         self._node_cache: dict[str, list[ExistingNode]] = {}
 
     def _fetch_cached_nodes(self, labels: set[str]) -> list[ExistingNode]:
@@ -58,7 +73,9 @@ class AutoGraftNeo4jMiddleware:
             # 1. Resolve Nodes
             for node in doc.nodes:
                 entity = Entity(canonical_name=str(node.id), type=str(node.type))
-                match_result = resolve_entity(entity, existing_nodes)
+                match_result = resolve_entity(
+                    entity, existing_nodes, config=self.config
+                )
 
                 if match_result.is_match:
                     matched_id = str(match_result.matched_node_id)

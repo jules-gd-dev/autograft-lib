@@ -1,11 +1,11 @@
 """Layer 3: LLM Arbitration for ambiguous entity resolution cases using LiteLLM."""
 
-import os
 import time
 
 import litellm
 from dotenv import load_dotenv
 
+from autograft.config import AutoGraftConfig
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
 load_dotenv()
@@ -13,14 +13,29 @@ load_dotenv()
 
 def _ask_llm(
     prompt: str,
-    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
+    model: str | None = None,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    config: AutoGraftConfig | None = None,
 ) -> tuple[str, int]:
     """Calls litellm completion with exponential backoff retry for rate limits."""
+    cfg = config or AutoGraftConfig()
+    target_model = model or cfg.model
+    target_api_key = api_key or cfg.api_key
+    target_api_base = api_base or cfg.api_base
+
+    kwargs: dict = {}
+    if target_api_key:
+        kwargs["api_key"] = target_api_key
+    if target_api_base:
+        kwargs["api_base"] = target_api_base
+
     for attempt in range(5):
         try:
             response = litellm.completion(
-                model=model,
+                model=target_model,
                 messages=[{"role": "user", "content": prompt}],
+                **kwargs,
             )
             content = str(response.choices[0].message.content)
             tokens = 0
@@ -40,7 +55,10 @@ def _ask_llm(
 def arbitrate_match(
     new_entity: Entity,
     existing_node: ExistingNode,
-    model: str = os.getenv("AUTOGRRAFT_LLM_MODEL", "groq/llama-3.3-70b-versatile"),
+    model: str | None = None,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    config: AutoGraftConfig | None = None,
 ) -> MatchResult:
     """Arbitrates ambiguous match between new_entity and existing_node via LLM."""
     aliases_str = f", Aliases={new_entity.aliases}" if new_entity.aliases else ""
@@ -59,7 +77,13 @@ def arbitrate_match(
         "Reply STRICTLY with 'YES' or 'NO'."
     )
     try:
-        res = _ask_llm(prompt, model=model)
+        res = _ask_llm(
+            prompt,
+            model=model,
+            api_key=api_key,
+            api_base=api_base,
+            config=config,
+        )
         if isinstance(res, tuple):
             response_text, tokens_used = res
         else:
