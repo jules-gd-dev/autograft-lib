@@ -71,7 +71,7 @@ For 1,000,000 documents, AutoGraft maintains **$0.00** LLM Entity Resolution API
 
 ---
 
-### 🚨 Massive Homonym Crash Test (660 Documents)
+### Massive Homonym Crash Test (660 Documents)
 To push AutoGraft to its absolute limits, we generated a massive **660 document benchmark** across 10 industries, injecting extremely tricky cross-domain homonyms (e.g., `Apple` (Fruit) vs `Apple Inc.` (Company), `Python` (Animal) vs `Python` (Technology)). 
 
 Because AutoGraft enforces strict **Type/Label isolation**, it achieved **100% accuracy in avoiding false merges**. Additionally, the underlying naive LLM extraction layer hit a hard daily API rate limit (500,000+ tokens) during this test, proving exactly why AutoGraft's local short-circuiting is mandatory for scalable production pipelines.
