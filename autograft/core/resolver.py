@@ -32,11 +32,6 @@ def resolve_entity(
 
     # Layer 1: Deterministic
     exact_candidates = db_client.find_exact_candidates(new_entity)
-    if not exact_candidates:
-        logger.debug(
-            f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.canonical_name}'"
-        )
-        return MatchResult(is_match=False)
 
     exact_result = find_exact_match(new_entity, exact_candidates, config=cfg)
     if exact_result.is_match:

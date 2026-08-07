@@ -97,7 +97,7 @@ class AutoGraftNeo4jMiddleware:
         query = f"""
         CALL db.index.vector.queryNodes($index_name, $limit, $embedding)
         YIELD node, score
-        RETURN node.{self.config.id_attr} AS id, node.{self.config.aliases_attr} AS aliases, score
+        RETURN node.{self.config.id_attr} AS id, node.{self.config.aliases_attr} AS aliases, node.{self.config.embedding_attr} AS embedding
         """
         try:
             results = self.graph.query(
@@ -118,6 +118,7 @@ class AutoGraftNeo4jMiddleware:
                             canonical_name=node_id,
                             type=entity.type,
                             aliases=r.get("aliases") or [],
+                            embedding=r.get("embedding"),
                         )
                     )
             return nodes
