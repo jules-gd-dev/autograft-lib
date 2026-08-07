@@ -32,7 +32,9 @@ def resolve_entity(
     ]
 
     if not filtered_nodes:
-        logger.debug(f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.name}'")
+        logger.debug(
+            f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.name}'"
+        )
         return MatchResult(is_match=False)
 
     # Layer 1: Deterministic
