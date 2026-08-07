@@ -5,9 +5,8 @@ on:
     types: [published]
   push:
     tags:
-      - 'PyPi*'
-      - 'pypi*'
       - 'v*'
+      - 'V*'
 
 jobs:
   build-and-publish:
@@ -35,7 +34,7 @@ jobs:
         import os, re
         tag = os.environ.get('TAG_NAME', '').strip()
         print(f'Raw tag: {tag}')
-        version = re.sub(r'^(pypi|v)', '', tag, flags=re.IGNORECASE).strip()
+        version = re.sub(r'^v', '', tag, flags=re.IGNORECASE).strip()
         print(f'Extracted version: {version}')
         if version:
             with open('pyproject.toml', 'r') as f:
@@ -45,6 +44,7 @@ jobs:
                 f.write(new_content)
             print(f'Successfully updated pyproject.toml version to {version}')
         "
+
 
     - name: Install build tool
       run: python -m pip install --upgrade pip build
