@@ -1,6 +1,7 @@
 import logging
 
 from autograft.config import AutoGraftConfig
+from autograft.db.client import GraphDatabaseClient, ListDatabaseClient
 from autograft.layers.deterministic import find_exact_match
 from autograft.layers.llm_arbiter import arbitrate_match
 from autograft.layers.semantic import find_semantic_match
@@ -11,13 +12,16 @@ logger = logging.getLogger("autograft.resolver")
 
 def resolve_entity(
     new_entity: Entity,
-    existing_nodes: list[ExistingNode],
+    db_client: GraphDatabaseClient | list[ExistingNode],
     config: AutoGraftConfig | None = None,
     model: str | None = None,
     api_key: str | None = None,
     api_base: str | None = None,
 ) -> MatchResult:
     """Orchestrates 3-layer ER pipeline to determine entity match."""
+    if isinstance(db_client, list):
+        db_client = ListDatabaseClient(db_client)
+
     cfg = config or AutoGraftConfig()
     if model:
         cfg.model = model
@@ -26,26 +30,23 @@ def resolve_entity(
     if api_base:
         cfg.api_base = api_base
 
-    # Filter existing nodes to only include those with the exact same type/label
-    filtered_nodes = [
-        n for n in existing_nodes if n.type.lower() == new_entity.type.lower()
-    ]
-
-    if not filtered_nodes:
+    # Layer 1: Deterministic
+    exact_candidates = db_client.find_exact_candidates(new_entity)
+    if not exact_candidates:
         logger.debug(
             f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.canonical_name}'"
         )
         return MatchResult(is_match=False)
 
-    # Layer 1: Deterministic
-    exact_result = find_exact_match(new_entity, filtered_nodes, config=cfg)
+    exact_result = find_exact_match(new_entity, exact_candidates, config=cfg)
     if exact_result.is_match:
         return exact_result
 
     # Layer 2: Semantic Vector Blocking
+    semantic_candidates = db_client.find_semantic_candidates(new_entity, limit=5)
     semantic_result = find_semantic_match(
         new_entity,
-        filtered_nodes,
+        semantic_candidates,
         match_threshold=cfg.match_threshold,
         uncertainty_threshold=cfg.uncertainty_threshold,
     )
@@ -58,7 +59,7 @@ def resolve_entity(
         and semantic_result.matched_node_id is not None
     ):
         matched_node = next(
-            (n for n in filtered_nodes if n.node_id == semantic_result.matched_node_id),
+            (n for n in semantic_candidates if n.node_id == semantic_result.matched_node_id),
             None,
         )
         if matched_node is not None:

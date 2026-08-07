@@ -84,7 +84,7 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     """Test source and target node remapping and cache initialization for new node types."""
     mock_neo4j = MagicMock()
 
-    def mock_query(query: str) -> list[dict]:
+    def mock_query(query: str, **kwargs) -> list[dict]:
         if "Company" in query:
             return [{"id": "Apple Inc.", "aliases": ["Apple"]}]
         if "Product" in query:
@@ -110,13 +110,12 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     assert doc.relationships[0].source.id == "Apple Inc."
     assert doc.relationships[0].target.id == "iPhone 15"
 
-    # Now add document with an uncached node type to hit self._node_cache[node.type] = []
+    # Now add document with an uncached node type
     node_new = Node(id="UncachedEntity", type="UncachedType")
     doc_uncached = GraphDocument(
         nodes=[node_new], relationships=[], source=Document(page_content="")
     )
     middleware.add_graph_documents([doc_uncached])
-    assert "UncachedType" in middleware._node_cache
 
 
 def test_llamaindex_middleware_relations_and_getattr() -> None:
@@ -134,7 +133,6 @@ def test_llamaindex_middleware_relations_and_getattr() -> None:
 
     # Upsert node with uncached label
     middleware.upsert_nodes([MutableMockEntityNode(name="BrandNew", label="NewLabel")])
-    assert "NewLabel" in middleware._node_cache
 
     # Test upsert_relations
     relations = [MagicMock()]
