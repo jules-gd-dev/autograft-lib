@@ -23,7 +23,7 @@ def resolve_entity(
         cfg.api_base = api_base
 
     # Layer 1: Deterministic
-    exact_result = find_exact_match(new_entity, existing_nodes)
+    exact_result = find_exact_match(new_entity, existing_nodes, config=cfg)
     if exact_result.is_match:
         return exact_result
 
