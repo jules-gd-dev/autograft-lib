@@ -83,11 +83,15 @@ def test_llamaindex_middleware_deduplication() -> None:
 def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     """Test source and target node remapping and cache initialization for new node types."""
     mock_neo4j = MagicMock()
-    # Mock Neo4j query returning existing canonical nodes for both types
-    mock_neo4j.query.side_effect = [
-        [{"id": "Apple Inc.", "aliases": ["Apple"]}],
-        [{"id": "iPhone 15", "aliases": ["iPhone"]}],
-    ]
+
+    def mock_query(query: str) -> list[dict]:
+        if "Company" in query:
+            return [{"id": "Apple Inc.", "aliases": ["Apple"]}]
+        if "Product" in query:
+            return [{"id": "iPhone 15", "aliases": ["iPhone"]}]
+        return []
+
+    mock_neo4j.query.side_effect = mock_query
 
     middleware = AutoGraftNeo4jMiddleware(mock_neo4j)
 

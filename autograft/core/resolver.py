@@ -22,15 +22,20 @@ def resolve_entity(
     if api_base:
         cfg.api_base = api_base
 
+    # Filter existing nodes to only include those with the exact same type/label
+    filtered_nodes = [
+        n for n in existing_nodes if n.type.lower() == new_entity.type.lower()
+    ]
+
     # Layer 1: Deterministic
-    exact_result = find_exact_match(new_entity, existing_nodes, config=cfg)
+    exact_result = find_exact_match(new_entity, filtered_nodes, config=cfg)
     if exact_result.is_match:
         return exact_result
 
     # Layer 2: Semantic Vector Blocking
     semantic_result = find_semantic_match(
         new_entity,
-        existing_nodes,
+        filtered_nodes,
         match_threshold=cfg.match_threshold,
         uncertainty_threshold=cfg.uncertainty_threshold,
     )
@@ -43,7 +48,7 @@ def resolve_entity(
         and semantic_result.matched_node_id is not None
     ):
         matched_node = next(
-            (n for n in existing_nodes if n.node_id == semantic_result.matched_node_id),
+            (n for n in filtered_nodes if n.node_id == semantic_result.matched_node_id),
             None,
         )
         if matched_node is not None:
