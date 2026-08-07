@@ -108,7 +108,9 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
 
     # Now add document with an uncached node type to hit self._node_cache[node.type] = []
     node_new = Node(id="UncachedEntity", type="UncachedType")
-    doc_uncached = GraphDocument(nodes=[node_new], relationships=[], source=Document(page_content=""))
+    doc_uncached = GraphDocument(
+        nodes=[node_new], relationships=[], source=Document(page_content="")
+    )
     middleware.add_graph_documents([doc_uncached])
     assert "UncachedType" in middleware._node_cache
 
@@ -139,5 +141,3 @@ def test_llamaindex_middleware_relations_and_getattr() -> None:
     result = middleware.custom_store_method("arg1")
     assert result == "delegated_result"
     mock_store.custom_store_method.assert_called_once_with("arg1")
-
-

@@ -123,4 +123,3 @@ def test_existing_node_missing_embedding() -> None:
     result = find_semantic_match(new_entity, existing_nodes)
     assert result.is_match is True
     assert result.matched_node_id == "node_1"
-

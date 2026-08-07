@@ -88,4 +88,3 @@ def test_resolver_no_match() -> None:
 
     assert result.is_match is False
     assert result.matched_node_id is None
-

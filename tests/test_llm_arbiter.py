@@ -31,9 +31,7 @@ def test_llm_rejects_match(mock_ask_llm) -> None:
     """Test LLM arbitration rejecting match when LLM responds with NON."""
     # Arrange
     mock_ask_llm.return_value = ("NON", 15)
-    new_entity = Entity(
-        canonical_name="Apple", type="Fruit", aliases=["Crisp Apple"]
-    )
+    new_entity = Entity(canonical_name="Apple", type="Fruit", aliases=["Crisp Apple"])
     existing_node = ExistingNode(
         node_id="456",
         canonical_name="Apple Inc.",
@@ -66,7 +64,9 @@ def test_llm_arbiter_exception_handling(mock_ask_llm) -> None:
 
 
 from unittest.mock import MagicMock
+
 import pytest
+
 from autograft.layers.llm_arbiter import _ask_llm
 
 
@@ -121,4 +121,3 @@ def test_ask_llm_unexpected_exception(mock_completion) -> None:
 
     with pytest.raises(ValueError, match="Invalid argument"):
         _ask_llm("test prompt", model="mock-model")
-
