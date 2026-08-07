@@ -16,7 +16,7 @@ def find_exact_match(
     """Checks if new_entity matches any existing node based on exact name or alias."""
     cfg = config or AutoGraftConfig()
     matching_func = getattr(fuzz, cfg.matching_algorithm, fuzz.ratio)
-    
+
     best_score = 0.0
     best_node_id = None
 

@@ -11,7 +11,4 @@ def generate_merge_query(new_entity: Entity, match_result: MatchResult) -> str:
             "SET n.type = $type, n.aliases = $aliases RETURN n"
         )
 
-    return (
-        "MATCH (n:Entity {node_id: $node_id}) "
-        "SET n.aliases = $aliases RETURN n"
-    )
+    return "MATCH (n:Entity {node_id: $node_id}) SET n.aliases = $aliases RETURN n"

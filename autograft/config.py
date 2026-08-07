@@ -22,10 +22,13 @@ class AutoGraftConfig(BaseModel):
     # Resolution Thresholds
     match_threshold: float = Field(default=0.85)
     uncertainty_threshold: float = Field(default=0.75)
-    
+
     # Graph Schema Config
     id_attr: str = Field(default="id")
     aliases_attr: str = Field(default="aliases")
-    
+
     # String Matching
-    matching_algorithm: str = Field(default="token_sort_ratio", description="fuzz matching algorithm (ratio, token_sort_ratio, token_set_ratio)")
+    matching_algorithm: str = Field(
+        default="token_sort_ratio",
+        description="fuzz matching algorithm (ratio, token_sort_ratio, token_set_ratio)",
+    )
