@@ -1,11 +1,13 @@
 """LlamaIndex integration for AutoGraft."""
 
-import contextlib
+import logging
 from typing import TYPE_CHECKING, Any
 
 from autograft.config import AutoGraftConfig
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import Entity, ExistingNode
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.graph_stores.types import EntityNode, Relation  # type: ignore
@@ -35,56 +37,117 @@ class AutoGraftLlamaIndexMiddleware:
             self.config.api_key = api_key
         if api_base:
             self.config.api_base = api_base
-        self._node_cache: dict[str, list[ExistingNode]] = {}
+        self._node_cache: dict[str, Any] = {}
 
-    def _fetch_cached_nodes(self, labels: set[str]) -> list[ExistingNode]:
-        """Fetches nodes from Neo4j natively, caching them locally per label."""
-        nodes = []
-        for label in labels:
-            if label not in self._node_cache:
-                self._node_cache[label] = []
-                with contextlib.suppress(Exception):
-                    # Access the underlying Neo4j driver from LlamaIndex's store
-                    query = f"MATCH (n:`{label}`) RETURN n.{self.config.id_attr} AS id, n.{self.config.aliases_attr} AS aliases LIMIT 10000"
-                    results, _ = self.store.structured_query(query)
-                    for r in results:
-                        node_id = str(r.get("id") or "")
-                        aliases = r.get("aliases") or []
-                        if node_id:
-                            self._node_cache[label].append(
-                                ExistingNode(
-                                    node_id=node_id,
-                                    canonical_name=node_id,
-                                    type=label,
-                                    aliases=aliases,
-                                )
-                            )
-            nodes.extend(self._node_cache[label])
-        return nodes
+    def _ensure_vector_index(self, label: str) -> None:
+        if not self.config.auto_create_indexes:
+            return
+        index_name = f"autograft_{label.lower()}_vector_index"
+        if index_name in self._node_cache:
+            return
+        self._node_cache[index_name] = True
+        try:
+            query = f"""
+            CREATE VECTOR INDEX `{index_name}` IF NOT EXISTS
+            FOR (n:`{label}`) ON (n.{self.config.embedding_attr})
+            OPTIONS {{indexConfig: {{
+                `vector.dimensions`: {self.config.embedding_dimension},
+                `vector.similarity_function`: 'cosine'
+            }}}}
+            """
+            self.store.structured_query(query)
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Failed to create vector index {index_name}: {e}")
+
+    def find_exact_candidates(self, entity: Entity) -> list[ExistingNode]:
+        """Queries Neo4j for exact match candidates."""
+        query = f"""
+        MATCH (n:`{entity.type}`)
+        WHERE n.{self.config.id_attr} = $name OR $name IN n.{self.config.aliases_attr}
+        RETURN n.{self.config.id_attr} AS id, n.{self.config.aliases_attr} AS aliases
+        LIMIT 100
+        """
+        try:
+            results, _ = self.store.structured_query(
+                query, param_map={"name": entity.canonical_name}
+            )
+            nodes = []
+            for r in results:
+                node_id = str(r.get("id") or "")
+                if node_id:
+                    nodes.append(
+                        ExistingNode(
+                            node_id=node_id,
+                            canonical_name=node_id,
+                            type=entity.type,
+                            aliases=r.get("aliases") or [],
+                        )
+                    )
+            return nodes
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Query for exact candidates failed: {e}")
+            return []
+
+    def find_semantic_candidates(
+        self, entity: Entity, limit: int = 5
+    ) -> list[ExistingNode]:
+        """Queries Neo4j vector index for semantic candidates."""
+        if not entity.embedding:
+            return []
+
+        self._ensure_vector_index(entity.type)
+        index_name = f"autograft_{entity.type.lower()}_vector_index"
+
+        query = f"""
+        CALL db.index.vector.queryNodes($index_name, $limit, $embedding)
+        YIELD node, score
+        RETURN node.{self.config.id_attr} AS id, node.{self.config.aliases_attr} AS aliases, node.{self.config.embedding_attr} AS embedding
+        """
+        try:
+            results, _ = self.store.structured_query(
+                query,
+                param_map={
+                    "index_name": index_name,
+                    "limit": limit,
+                    "embedding": entity.embedding,
+                },
+            )
+            nodes = []
+            for r in results:
+                node_id = str(r.get("id") or "")
+                if node_id:
+                    nodes.append(
+                        ExistingNode(
+                            node_id=node_id,
+                            canonical_name=node_id,
+                            type=entity.type,
+                            aliases=r.get("aliases") or [],
+                            embedding=r.get("embedding"),
+                        )
+                    )
+            return nodes
+        except Exception:  # noqa: BLE001
+            return []
 
     def upsert_nodes(self, nodes: list[EntityNode]) -> None:
         """Intercepts, deduplicates, and passes nodes to LlamaIndex's store."""
-        labels = {n.label for n in nodes if n.label}
-        existing_nodes = self._fetch_cached_nodes(labels)
-
         for node in nodes:
-            entity = Entity(canonical_name=str(node.name), type=str(node.label))
-            match_result = resolve_entity(entity, existing_nodes, config=self.config)
+            embedding = None
+            if hasattr(node, "properties") and isinstance(node.properties, dict):
+                embedding = node.properties.get(self.config.embedding_attr)
+
+            entity = Entity(
+                canonical_name=str(node.name),
+                type=str(node.label),
+                embedding=embedding,
+            )
+            match_result = resolve_entity(entity, db_client=self, config=self.config)
 
             if match_result.is_match:
                 # Canonicalize the new node's name (which acts as ID in LlamaIndex)
                 node.name = str(match_result.matched_node_id)
             else:
-                new_ex_node = ExistingNode(
-                    node_id=str(node.name),
-                    canonical_name=str(node.name),
-                    type=str(node.label),
-                    aliases=[str(node.name)],
-                )
-                if node.label not in self._node_cache:
-                    self._node_cache[node.label] = []
-                self._node_cache[node.label].append(new_ex_node)
-                existing_nodes.append(new_ex_node)
+                pass
 
         self.store.upsert_nodes(nodes)
 

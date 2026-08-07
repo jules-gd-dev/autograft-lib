@@ -84,7 +84,7 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     """Test source and target node remapping and cache initialization for new node types."""
     mock_neo4j = MagicMock()
 
-    def mock_query(query: str) -> list[dict]:
+    def mock_query(query: str, **kwargs) -> list[dict]:
         if "Company" in query:
             return [{"id": "Apple Inc.", "aliases": ["Apple"]}]
         if "Product" in query:
@@ -110,13 +110,12 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     assert doc.relationships[0].source.id == "Apple Inc."
     assert doc.relationships[0].target.id == "iPhone 15"
 
-    # Now add document with an uncached node type to hit self._node_cache[node.type] = []
+    # Now add document with an uncached node type
     node_new = Node(id="UncachedEntity", type="UncachedType")
     doc_uncached = GraphDocument(
         nodes=[node_new], relationships=[], source=Document(page_content="")
     )
     middleware.add_graph_documents([doc_uncached])
-    assert "UncachedType" in middleware._node_cache
 
 
 def test_llamaindex_middleware_relations_and_getattr() -> None:
@@ -134,7 +133,6 @@ def test_llamaindex_middleware_relations_and_getattr() -> None:
 
     # Upsert node with uncached label
     middleware.upsert_nodes([MutableMockEntityNode(name="BrandNew", label="NewLabel")])
-    assert "NewLabel" in middleware._node_cache
 
     # Test upsert_relations
     relations = [MagicMock()]
@@ -145,3 +143,104 @@ def test_llamaindex_middleware_relations_and_getattr() -> None:
     result = middleware.custom_store_method("arg1")
     assert result == "delegated_result"
     mock_store.custom_store_method.assert_called_once_with("arg1")
+
+
+def test_langchain_middleware_semantic_match() -> None:
+    """Test that LangChain middleware uses vector search for semantic candidates and handles errors."""
+    mock_neo4j = MagicMock()
+
+    def mock_query(query: str, **kwargs) -> list[dict]:
+        if "WHERE n.id = $name" in query:
+            return []  # No exact match
+        if "db.index.vector.queryNodes" in query:
+            return [
+                {
+                    "id": "Apple Inc.",
+                    "aliases": [],
+                    "embedding": [1.0, 0.0, 0.0],
+                    "score": 0.95,
+                }
+            ]
+        return []
+
+    mock_neo4j.query.side_effect = mock_query
+
+    middleware = AutoGraftNeo4jMiddleware(mock_neo4j)
+    node_apple = Node(
+        id="Apple", type="Company", properties={"embedding": [1.0, 0.0, 0.0]}
+    )
+    doc = GraphDocument(
+        nodes=[node_apple], relationships=[], source=Document(page_content="")
+    )
+    middleware.add_graph_documents([doc])
+
+    # Assert nodes were updated in-place (canonicalized via semantic match)
+    assert doc.nodes[0].id == "Apple Inc."
+
+    # Test Exception Handling in semantic candidates
+    def mock_query_err(query: str, **kwargs) -> list[dict]:
+        if "db.index.vector.queryNodes" in query:
+            raise ValueError("Index missing")
+        return []
+
+    mock_neo4j.query.side_effect = mock_query_err
+
+    node_err = Node(
+        id="Apple", type="Company", properties={"embedding": [1.0, 0.0, 0.0]}
+    )
+    doc_err = GraphDocument(
+        nodes=[node_err], relationships=[], source=Document(page_content="")
+    )
+    middleware.add_graph_documents([doc_err])
+    # Fails gracefully
+    assert doc_err.nodes[0].id == "Apple"
+
+
+def test_llamaindex_middleware_semantic_match() -> None:
+    """Test that LlamaIndex middleware uses vector search for semantic candidates and handles errors."""
+    mock_store = MagicMock()
+
+    def mock_structured_query(query: str, **kwargs) -> tuple[list[dict], None]:
+        if "WHERE n.id = $name" in query:
+            return [], None  # No exact match
+        if "db.index.vector.queryNodes" in query:
+            return [
+                {
+                    "id": "Apple Inc.",
+                    "aliases": [],
+                    "embedding": [1.0, 0.0, 0.0],
+                    "score": 0.95,
+                }
+            ], None
+        return [], None
+
+    mock_store.structured_query.side_effect = mock_structured_query
+
+    middleware = AutoGraftLlamaIndexMiddleware(mock_store)
+
+    class MutableMockEntityNode:
+        def __init__(self, name, label, properties=None):
+            self.name = name
+            self.label = label
+            self.properties = properties or {}
+
+    mut_node_apple = MutableMockEntityNode(
+        name="Apple", label="Company", properties={"embedding": [1.0, 0.0, 0.0]}
+    )
+    middleware.upsert_nodes([mut_node_apple])
+
+    assert mut_node_apple.name == "Apple Inc."
+
+    # Test Exception Handling
+    def mock_structured_query_err(query: str, **kwargs) -> tuple[list[dict], None]:
+        if "db.index.vector.queryNodes" in query:
+            raise ValueError("Index missing")
+        return [], None
+
+    mock_store.structured_query.side_effect = mock_structured_query_err
+
+    mut_node_err = MutableMockEntityNode(
+        name="Apple", label="Company", properties={"embedding": [1.0, 0.0, 0.0]}
+    )
+    middleware.upsert_nodes([mut_node_err])
+    assert mut_node_err.name == "Apple"

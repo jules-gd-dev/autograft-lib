@@ -26,6 +26,9 @@ class AutoGraftConfig(BaseModel):
     # Graph Schema Config
     id_attr: str = Field(default="id")
     aliases_attr: str = Field(default="aliases")
+    embedding_attr: str = Field(default="embedding")
+    embedding_dimension: int = Field(default=1536)
+    auto_create_indexes: bool = Field(default=True)
 
     # String Matching
     matching_algorithm: str = Field(
