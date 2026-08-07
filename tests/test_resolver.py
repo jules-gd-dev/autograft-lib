@@ -54,6 +54,29 @@ def test_resolver_layer_3_uncertain_hit(mock_arbitrate) -> None:
     mock_arbitrate.assert_called_once()
 
 
+def test_resolver_layer_2_strong_hit() -> None:
+    """Test strong semantic match in Layer 2 returns semantic result directly."""
+    new_entity = Entity(
+        canonical_name="Apple Corp",
+        type="Company",
+        embedding=[1.0, 0.0, 0.0],
+    )
+    existing_nodes = [
+        ExistingNode(
+            node_id="node_apple",
+            canonical_name="Apple Inc.",
+            type="Company",
+            embedding=[0.99, 0.0, 0.0],
+        )
+    ]
+
+    result = resolve_entity(new_entity, existing_nodes)
+
+    assert result.is_match is True
+    assert result.matched_node_id == "node_apple"
+    assert result.layer == "semantic"
+
+
 def test_resolver_no_match() -> None:
     """Test when no layer finds a match."""
     new_entity = Entity(canonical_name="Google", type="Company")
@@ -65,3 +88,4 @@ def test_resolver_no_match() -> None:
 
     assert result.is_match is False
     assert result.matched_node_id is None
+
