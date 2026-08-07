@@ -85,7 +85,7 @@ For 1,000,000 documents, AutoGraft maintains **$0.00** LLM Entity Resolution API
 
 AutoGraft provides native 1-line integrations for both **LangChain** and **LlamaIndex**. By wrapping your Graph store, AutoGraft intercepts entities, deduplicates them locally at 0 cost, and safely forwards them to your database.
 
-### 🦜🔗 LangChain
+### LangChain
 
 ```python
 from langchain_community.graphs import Neo4jGraph
@@ -101,7 +101,7 @@ autograft_graph = AutoGraftNeo4jMiddleware(graph)
 autograft_graph.add_graph_documents(extracted_graph_documents)
 ```
 
-### 🦙 LlamaIndex
+### LlamaIndex
 
 ```python
 from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
