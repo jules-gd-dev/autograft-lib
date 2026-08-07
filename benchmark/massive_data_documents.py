@@ -1,6 +1,7 @@
 """Documents dataset generator for 1000 multi-industry massive benchmark documents."""
 from langchain_core.documents import Document
 
+
 def _generate_massive_texts() -> dict[str, list[str]]:
     domains = {
         "Legal": [

@@ -2,10 +2,10 @@
 import os
 import sys
 import time
-from typing import Tuple
-from dotenv import load_dotenv
-import matplotlib.pyplot as plt
+
 import litellm
+import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 
 from autograft.core.resolver import resolve_entity
 from autograft.models.entities import Entity, ExistingNode
@@ -26,7 +26,7 @@ def print_progress(current: int, total: int, prefix: str = "Progress", length: i
         sys.stdout.write("\n")
 
 
-def build_dataset() -> Tuple[list[ExistingNode], list[Entity]]:
+def build_dataset() -> tuple[list[ExistingNode], list[Entity]]:
     """Builds a rich dataset with 30 existing nodes and 50 test entities for real-world benchmarking."""
     companies = [
         ("n1", "Microsoft Corporation", ["Microsoft", "MSFT"]),
@@ -123,7 +123,7 @@ def build_dataset() -> Tuple[list[ExistingNode], list[Entity]]:
 
 def run_langchain_benchmark(
     existing_nodes: list[ExistingNode], test_entities: list[Entity]
-) -> Tuple[float, int, int]:
+) -> tuple[float, int, int]:
     """Simulates naive LangChain approach where LLM is called for every entity."""
     print(f"Running Naive LangChain / Full-LLM Approach on {len(test_entities)} entities...")
     nodes_summary = [
@@ -151,7 +151,7 @@ def run_langchain_benchmark(
             llm_calls += 1
             if hasattr(response, "usage") and response.usage:
                 total_tokens += getattr(response.usage, "total_tokens", 0) or 0
-        except Exception as err:
+        except Exception:
             llm_calls += 1
             total_tokens += 0
 
@@ -163,7 +163,7 @@ def run_langchain_benchmark(
 
 def run_autograft_benchmark(
     existing_nodes: list[ExistingNode], test_entities: list[Entity]
-) -> Tuple[float, int, int]:
+) -> tuple[float, int, int]:
     """Runs AutoGraft 3-layer hybrid Entity Resolution pipeline."""
     print(f"\nRunning AutoGraft Hybrid ER Approach on {len(test_entities)} entities...")
     start_time = time.time()
@@ -184,7 +184,7 @@ def run_autograft_benchmark(
 
 
 def generate_charts(
-    lc_metrics: Tuple[float, int, int], ag_metrics: Tuple[float, int, int]
+    lc_metrics: tuple[float, int, int], ag_metrics: tuple[float, int, int]
 ) -> None:
     """Generates a high-quality, modern comparison bar chart UI saved to benchmark/assets/benchmark_results.png."""
     os.makedirs("benchmark/assets", exist_ok=True)
@@ -334,7 +334,7 @@ def generate_cost_projection_chart(
 
 
 def print_summary_table(
-    lc_metrics: Tuple[float, int, int], ag_metrics: Tuple[float, int, int]
+    lc_metrics: tuple[float, int, int], ag_metrics: tuple[float, int, int]
 ) -> None:
     """Prints a clean tabular comparison of benchmark metrics."""
     lc_time, lc_calls, lc_tokens = lc_metrics

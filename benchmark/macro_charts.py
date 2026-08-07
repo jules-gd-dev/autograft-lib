@@ -1,5 +1,6 @@
 """Professional chart generation module for 4-industry macro RAG benchmark."""
 import os
+
 import matplotlib.pyplot as plt
 
 

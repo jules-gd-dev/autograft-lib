@@ -1,17 +1,16 @@
 """Massive Enterprise RAG ER Benchmark across 10 Industries (1000 Documents)."""
-import json
 import os
 import sys
 import time
+
 from dotenv import load_dotenv
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_openai import ChatOpenAI
 
 from autograft import Entity, resolve_and_generate_cypher
 from autograft.core.resolver import resolve_entity
-from benchmark.macro_charts import generate_macro_charts
-from benchmark.massive_data_documents import get_massive_documents
 from benchmark.macro_data_existing import build_macro_existing_nodes
+from benchmark.massive_data_documents import get_massive_documents
 
 load_dotenv()
 
@@ -116,12 +115,12 @@ def run_massive_benchmark() -> None:
         f"Total Extracted Entities    : {lc_calls_total}",
         "",
         "--- LLM ER API CALLS ---",
-        f"LangChain Naive (No ER)     : 0 calls",
+        "LangChain Naive (No ER)     : 0 calls",
         f"LangChain + Full LLM ER     : {lc_calls_total} calls",
         f"LangChain + AutoGraft       : {ag_calls_total} calls",
         "",
         "--- TOKENS CONSUMED ---",
-        f"LangChain Naive (No ER)     : 0 tokens",
+        "LangChain Naive (No ER)     : 0 tokens",
         f"LangChain + Full LLM ER     : {lc_tokens_total:,} tokens",
         f"LangChain + AutoGraft       : {ag_tokens_total:,} tokens",
         "",
@@ -136,7 +135,7 @@ def run_massive_benchmark() -> None:
         f"LangChain + AutoGraft       : {total_merges} queries",
         "",
         "--- ESTIMATED COST ---",
-        f"LangChain Naive (No ER)     : $0.00000",
+        "LangChain Naive (No ER)     : $0.00000",
         f"LangChain + Full LLM ER     : ${lc_cost:.5f}",
         f"LangChain + AutoGraft       : ${ag_cost:.5f}",
         "",
@@ -148,7 +147,7 @@ def run_massive_benchmark() -> None:
         f.write("\n".join(report_lines))
 
     print("\n\n" + "\n".join(report_lines))
-    print(f"Massive report saved in 'benchmark/assets/massive_benchmark_report.txt'")
+    print("Massive report saved in 'benchmark/assets/massive_benchmark_report.txt'")
 
 
 if __name__ == "__main__":

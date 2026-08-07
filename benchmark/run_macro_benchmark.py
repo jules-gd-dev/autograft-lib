@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+
 from dotenv import load_dotenv
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_openai import ChatOpenAI
@@ -113,12 +114,12 @@ def run_macro_benchmark() -> None:
         f"Total Extracted Entities    : {lc_calls_total}",
         "",
         "--- LLM ER API CALLS ---",
-        f"LangChain Naive (No ER)     : 0 calls",
+        "LangChain Naive (No ER)     : 0 calls",
         f"LangChain + Full LLM ER     : {lc_calls_total} calls",
         f"LangChain + AutoGraft       : {ag_calls_total} calls (100% Local Short-Circuiting)",
         "",
         "--- TOKENS CONSUMED ---",
-        f"LangChain Naive (No ER)     : 0 tokens",
+        "LangChain Naive (No ER)     : 0 tokens",
         f"LangChain + Full LLM ER     : {lc_tokens_total:,} tokens",
         f"LangChain + AutoGraft       : {ag_tokens_total:,} tokens (100% Savings)",
         "",
@@ -133,7 +134,7 @@ def run_macro_benchmark() -> None:
         f"LangChain + AutoGraft       : {total_merges} queries",
         "",
         "--- ESTIMATED COST ---",
-        f"LangChain Naive (No ER)     : $0.00000",
+        "LangChain Naive (No ER)     : $0.00000",
         f"LangChain + Full LLM ER     : ${lc_cost:.5f}",
         f"LangChain + AutoGraft       : ${ag_cost:.5f}",
         "",
@@ -145,7 +146,7 @@ def run_macro_benchmark() -> None:
         f.write("\n".join(report_lines))
 
     print("\n\n" + "\n".join(report_lines))
-    print(f"Macro audit JSON and charts saved in 'benchmark/assets/'")
+    print("Macro audit JSON and charts saved in 'benchmark/assets/'")
 
 
 if __name__ == "__main__":
