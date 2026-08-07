@@ -6,7 +6,8 @@
 
 [English](README.md) | [Français](README_fr.md) | [中文](README_zh.md)
 
-[![PyPI](https://img.shields.io/pypi/v/autograft)](https://pypi.org/project/autograft/)
+[![PyPI - Version](https://img.shields.io/pypi/v/autograft?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/autograft/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/autograft?logo=python&logoColor=white)](https://pypi.org/project/autograft/)
 </div>
 
 停止在您的 Neo4j 知识图谱中产生重复实体。AutoGraft 会拦截 LangChain 或 LlamaIndex 提取的实体，使用 3 层混合方法（确定性 -> 向量 -> LLM）来合并重复项，并生成干净的 Cypher 查询。
