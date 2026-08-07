@@ -33,7 +33,7 @@ def resolve_entity(
 
     if not filtered_nodes:
         logger.debug(
-            f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.name}'"
+            f"Declined merge: No existing nodes match type '{new_entity.type}' for '{new_entity.canonical_name}'"
         )
         return MatchResult(is_match=False)
 
@@ -64,5 +64,7 @@ def resolve_entity(
         if matched_node is not None:
             return arbitrate_match(new_entity, matched_node, config=cfg)
 
-    logger.debug(f"Declined merge: No candidate found for '{new_entity.name}'")
+    logger.debug(
+        f"Declined merge: No candidate found for '{new_entity.canonical_name}'"
+    )
     return MatchResult(is_match=False)
