@@ -1,13 +1,11 @@
 """LlamaIndex integration for AutoGraft."""
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from autograft.config import AutoGraftConfig
 from autograft.core.resolver import resolve_entity
-from autograft.models.entities import Entity, ExistingNode
-
-logger = logging.getLogger(__name__)
+from autograft.integrations.base import BaseGraphMiddleware
+from autograft.models.entities import Entity
 
 if TYPE_CHECKING:
     from llama_index.core.graph_stores.types import EntityNode, Relation  # type: ignore
@@ -18,7 +16,7 @@ else:
     Neo4jPropertyGraphStore = Any
 
 
-class AutoGraftLlamaIndexMiddleware:
+class AutoGraftLlamaIndexMiddleware(BaseGraphMiddleware):
     """Plug & Play LlamaIndex PropertyGraphStore wrapper for zero-cost entity resolution."""
 
     def __init__(
@@ -29,105 +27,14 @@ class AutoGraftLlamaIndexMiddleware:
         api_key: str | None = None,
         api_base: str | None = None,
     ):
+        super().__init__(config, model, api_key, api_base)
         self.store = neo4j_store
-        self.config = config or AutoGraftConfig()
-        if model:
-            self.config.model = model
-        if api_key:
-            self.config.api_key = api_key
-        if api_base:
-            self.config.api_base = api_base
-        self._node_cache: dict[str, Any] = {}
 
-    def _ensure_vector_index(self, label: str) -> None:
-        if not self.config.auto_create_indexes:
-            return
-        index_name = f"autograft_{label.lower()}_vector_index"
-        if index_name in self._node_cache:
-            return
-        self._node_cache[index_name] = True
-        try:
-            query = f"""
-            CREATE VECTOR INDEX `{index_name}` IF NOT EXISTS
-            FOR (n:`{label}`) ON (n.{self.config.embedding_attr})
-            OPTIONS {{indexConfig: {{
-                `vector.dimensions`: {self.config.embedding_dimension},
-                `vector.similarity_function`: 'cosine'
-            }}}}
-            """
-            self.store.structured_query(query)
-        except Exception as e:  # noqa: BLE001
-            logger.warning(f"Failed to create vector index {index_name}: {e}")
-
-    def find_exact_candidates(self, entity: Entity) -> list[ExistingNode]:
-        """Queries Neo4j for exact match candidates."""
-        query = f"""
-        MATCH (n:`{entity.type}`)
-        WHERE n.{self.config.id_attr} = $name OR $name IN n.{self.config.aliases_attr}
-        RETURN n.{self.config.id_attr} AS id, n.{self.config.aliases_attr} AS aliases
-        LIMIT 100
-        """
-        try:
-            results, _ = self.store.structured_query(
-                query, param_map={"name": entity.canonical_name}
-            )
-            nodes = []
-            for r in results:
-                node_id = str(r.get("id") or "")
-                if node_id:
-                    nodes.append(
-                        ExistingNode(
-                            node_id=node_id,
-                            canonical_name=node_id,
-                            type=entity.type,
-                            aliases=r.get("aliases") or [],
-                        )
-                    )
-            return nodes
-        except Exception as e:  # noqa: BLE001
-            logger.debug(f"Query for exact candidates failed: {e}")
-            return []
-
-    def find_semantic_candidates(
-        self, entity: Entity, limit: int = 5
-    ) -> list[ExistingNode]:
-        """Queries Neo4j vector index for semantic candidates."""
-        if not entity.embedding:
-            return []
-
-        self._ensure_vector_index(entity.type)
-        index_name = f"autograft_{entity.type.lower()}_vector_index"
-
-        query = f"""
-        CALL db.index.vector.queryNodes($index_name, $limit, $embedding)
-        YIELD node, score
-        RETURN node.{self.config.id_attr} AS id, node.{self.config.aliases_attr} AS aliases, node.{self.config.embedding_attr} AS embedding
-        """
-        try:
-            results, _ = self.store.structured_query(
-                query,
-                param_map={
-                    "index_name": index_name,
-                    "limit": limit,
-                    "embedding": entity.embedding,
-                },
-            )
-            nodes = []
-            for r in results:
-                node_id = str(r.get("id") or "")
-                if node_id:
-                    nodes.append(
-                        ExistingNode(
-                            node_id=node_id,
-                            canonical_name=node_id,
-                            type=entity.type,
-                            aliases=r.get("aliases") or [],
-                            embedding=r.get("embedding"),
-                        )
-                    )
-            return nodes
-        except Exception:  # noqa: BLE001
-            return []
+    def _execute_query(
+        self, query: str, params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
+        results, _ = self.store.structured_query(query, param_map=params or {})
+        return results
 
     def upsert_nodes(self, nodes: list[EntityNode]) -> None:
         """Intercepts, deduplicates, and passes nodes to LlamaIndex's store."""
@@ -146,8 +53,6 @@ class AutoGraftLlamaIndexMiddleware:
             if match_result.is_match:
                 # Canonicalize the new node's name (which acts as ID in LlamaIndex)
                 node.name = str(match_result.matched_node_id)
-            else:
-                pass
 
         self.store.upsert_nodes(nodes)
 
