@@ -22,65 +22,59 @@ pip install autograft
 ## Why AutoGraft?
 
 - **LLM-Agnostic**: Works with OpenAI, Groq, Ollama, OpenRouter via litellm.
-- **Massive Cost Savings**: Reduces Entity Resolution token costs by up to 100% by resolving locally.
+- **Major Cost Savings**: Resolves ~92% of entities locally, cutting LLM Entity Resolution cost by ~92%.
 - **Plug & Play**: Drop-in replacement before your Neo4j database.
-- **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching.
+- **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching (mean 6.5 ms/entity).
+
+> **Embeddings:** AutoGraft consumes embeddings — it does not generate them. Feed
+> pre-computed vectors (e.g. from `sentence-transformers`, OpenAI, etc.) via node
+> properties. See `AutoGraftConfig.embedding_attr`.
 
 ### The Problem vs The Solution
-Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates and semantic collisions. AutoGraft cleanly merges duplicates on-the-fly at $O(N \log M)$ complexity while preserving semantic boundaries (e.g. distinguishing Apple the company from Apple the fruit):
+Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates and semantic collisions. AutoGraft cleanly merges duplicates on-the-fly while preserving semantic boundaries (e.g. distinguishing Apple the company from Apple the fruit):
 
-![Figure 1.0: Concept Comparison](benchmark/assets/concept_comparison.png)
+![Figure 1.0: Concept Comparison](benchmark/assets/concept_comparison.png?v=3)
 
 ---
 
-## Performance Benchmark (600 Documents / 10 Industries)
+## Performance Benchmark (500 Documents / 10 Industries — Real Run)
 
-Evaluated across a massive suite of **600 real-world enterprise documents** spanning 10 key sectors: Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, and Real Estate (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
+Evaluated on **500 documents** containing **3 000 entity mentions** of **63 real-world
+identities** across 10 sectors, with genuine ambiguities (abbreviations, ticker
+symbols, homonyms). No scaling factors — the full 500-doc run was executed.
 
-*LLM Engine Configured*: **`groq/llama-3.1-8b-instant`** for extraction & arbitration, and **`groq/llama-3.3-70b-versatile`** for precision auditing.
+*Methodology:* real `all-MiniLM-L6-v2` embeddings, real Groq LLM arbiter calls
+(`groq/llama-3.1-8b-instant`), real `litellm` pricing. Accuracy measured against a
+ground-truth corpus. See [BENCHMARK.md](BENCHMARK.md) for full details.
 
-| Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
+| Metric | Naive (no ER) | Full LLM ER | AutoGraft (hybrid) |
 | :--- | :---: | :---: | :---: |
-| Processed Documents | 600 documents | 600 documents | 600 documents |
-| Extracted Entities | 2448 entities | 2448 entities | 2448 entities |
-| LLM ER API Calls | 0 calls | 2448 calls | 0 calls *(100% Local Short-Circuit)* |
-| Tokens Consumed | 0 tokens | 685,608 tokens | 0 tokens *(100% Token Savings)* |
-| Duplicates Created | 620 duplicates | 0 duplicates | 0 duplicates |
-| Duplicates Avoided (`MATCH`) | 0 queries | 620 queries | 620 queries |
-| New Entities Created (`MERGE`) | 2448 queries | 1828 queries | 1828 queries |
-| LLM ER Cost | $0.00000 | $0.13712 | $0.00000 |
-| Knowledge Graph Quality | Polluted with Duplicates | Deduplicated (Expensive) | Deduplicated & Cost-Free |
+| Entity mentions | 3000 | 3000 | 3000 |
+| LLM ER API calls | 0 | 3000 | **238** (92.1% local) |
+| Tokens consumed | 0 | 661,714 | **52,496** |
+| LLM ER cost | $0.000 | $0.0334 | **$0.00265** |
+| Final graph nodes | 3000 | 63 | 103 |
+| Precision / Recall | — | — | **100% / 98.6%** |
 
 ---
 
-### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (600 Docs / 10 Industries)
-![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
+### Figure 1.1: Raw Performance Metrics (500 real docs)
+![Figure 1.1](benchmark/assets/real_metrics.png)
 
-*Detailed Metric Breakdown:*
-- **Top-Left (Total Tokens Consumed)**: LangChain Naive and AutoGraft consume 0 resolution tokens, while Full LLM ER consumes 685,608 tokens.
-- **Top-Right (LLM ER API Calls)**: LangChain Naive and AutoGraft make 0 API calls, while Full LLM ER makes 2,448 external API calls.
-- **Bottom-Left (Neo4j Duplicates Avoided)**: LangChain Naive creates 620 duplicates (0 avoided), while Full LLM ER and AutoGraft resolve all 620 duplicates.
-- **Bottom-Right (Estimated LLM Cost)**: Compares the Entity Resolution financial cost. LangChain Naive costs $0 (but fails to deduplicate), Full LLM ER costs $0.13712, and AutoGraft costs $0 (while perfectly deduplicating the graph).
+### Figure 1.2: Resolution Layer Distribution
+![Figure 1.2](benchmark/assets/real_layers.png)
 
-### Figure 1.2: Entity Resolution Latency Scaling (Theoretical Projection)
-![Figure 1.2](benchmark/assets/macro_latency_scaling.png)
+### Figure 1.3: Cost Scaling (measured per-doc cost, linear projection)
+For 1,000,000 documents, AutoGraft keeps LLM Entity Resolution cost near **$5,300**
+vs **$66,400** for a full-LLM approach (~92% savings).
 
-*(Note: This chart is a mathematical projection based on algorithmic time complexity).* 
-*Why this matters:* The time required to insert entities into a graph using a naive LLM resolution approach explodes linearly ($O(N \times M)$). AutoGraft relies on Neo4j's native indexes (B-Tree & Vector) to achieve a logarithmic $O(N \log M)$ latency curve, keeping graph construction virtually instantaneous even at massive scales.
+![Figure 1.3](benchmark/assets/real_cost_scaling.png)
 
----
+### Figure 1.4: Accuracy vs Ground Truth
+![Figure 1.4](benchmark/assets/real_accuracy.png)
 
-### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1,000,000 Documents)
-For 1,000,000 documents, AutoGraft maintains **$0.00** LLM Entity Resolution API costs while guaranteeing a 100% clean, deduplicated Knowledge Graph.
-
-![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png)
-
----
-
-### Figure 1.3: Entity Resolution Precision by Industry Sector (100.0% Overall)
-![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png)
-
-*For complete evaluation methodology and dataset documentation, see [BENCHMARK.md](BENCHMARK.md).*
+*For complete methodology, dataset documentation, and honest limitations (the ~40
+missed merges), see [BENCHMARK.md](BENCHMARK.md).*
 
 ---
 
