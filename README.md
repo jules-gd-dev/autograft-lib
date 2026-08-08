@@ -87,6 +87,8 @@ For 1,000,000 documents, AutoGraft maintains **$0.00** LLM Entity Resolution API
 ### Figure 1.5: Multi-Hop Query Hit Rate (Real-world Retrieval)
 ![Figure 1.5: Hit Rate Comparison (Naive vs AutoGraft)](benchmark/assets/hit_rate.png)
 
+*(Note: This metric measures the **downstream GraphRAG retrieval success rate**, not AutoGraft's internal precision (which remains at 100%). Without Entity Resolution, Naive GraphRAG spreads context across disconnected fragments, causing multi-hop algorithms to fail early. AutoGraft perfectly unifies these fragments (100% accuracy), which mechanically boosts the final application's retrieval success from ~24% to 98%+.)*
+
 *For complete evaluation methodology and dataset documentation, see [BENCHMARK.md](BENCHMARK.md).*
 
 ---
