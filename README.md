@@ -26,6 +26,14 @@ pip install autograft
 - **Plug & Play**: Drop-in replacement before your Neo4j database.
 - **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching.
 
+### The Problem: Naive LLM Extraction
+Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates, ruining RAG retrieval and exploding costs:
+![Fragmented Graph](benchmark/assets/figure1_fragmented.png)
+
+### The Solution: AutoGraft Middleware
+AutoGraft cleanly merges duplicates on-the-fly at $O(N \log M)$ complexity:
+![AutoGraft Graph](benchmark/assets/figure2_autograft.png)
+
 ---
 
 ## Performance Benchmark (600 Documents / 10 Industries)
