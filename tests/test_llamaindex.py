@@ -29,7 +29,7 @@ def test_llamaindex_middleware_deduplication() -> None:
     middleware.upsert_nodes([mut_node_apple, mut_node_iphone])
 
     # Assert Neo4j query was called
-    assert mock_store.structured_query.call_count == 2
+    assert mock_store.structured_query.call_count == 3
 
     # Assert nodes were updated in-place (canonicalized)
     assert mut_node_apple.name == "Apple Inc."  # Deduplicated!
@@ -54,6 +54,7 @@ def test_llamaindex_middleware_relations_and_getattr() -> None:
 
     # Upsert node with uncached label
     middleware.upsert_nodes([MutableMockEntityNode(name="BrandNew", label="NewLabel")])
+    assert mock_store.structured_query.call_count == 1
 
     # Test upsert_relations
     relations = [MagicMock()]
@@ -100,6 +101,9 @@ def test_llamaindex_middleware_semantic_match() -> None:
     middleware.upsert_nodes([mut_node_apple])
 
     assert mut_node_apple.name == "Apple Inc."
+    assert (
+        mock_store.structured_query.call_count == 4
+    )  # exact + index + semantic + persist
 
     # Test Exception Handling
     def mock_structured_query_err(query: str, **kwargs) -> tuple[list[dict], None]:
@@ -114,3 +118,6 @@ def test_llamaindex_middleware_semantic_match() -> None:
     )
     middleware.upsert_nodes([mut_node_err])
     assert mut_node_err.name == "Apple"
+    assert (
+        mock_store.structured_query.call_count == 6
+    )  # first doc(4) + second exact(1) + vector error(1)

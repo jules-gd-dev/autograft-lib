@@ -22,9 +22,9 @@ pip install autograft
 ## Pourquoi AutoGraft ?
 
 - **Agnostique aux LLM** : Fonctionne avec OpenAI, Groq, Ollama, OpenRouter via litellm.
-- **Réduction majeure des coûts** : Résout ~92% des entités localement, réduisant le coût de l'ER LLM d'environ 92%.
+- **Réduction majeure des coûts** : Résout ~99.8% des entités localement, réduisant le coût de l'ER LLM d'environ 99.8%.
 - **Plug & Play** : Remplacement direct avant votre base Neo4j (1 ligne de code).
-- **Extrêmement Rapide** : RapidFuzz (C/C++) et NumPy (moyenne 6.5 ms/entité).
+- **Extrêmement Rapide** : RapidFuzz (C/C++) et NumPy (moyenne 0.3 ms/entité).
 
 > **Embeddings :** AutoGraft *consomme* les embeddings, il ne les *crée* pas.
 > Fournissez des vecteurs pré-calculés (ex. `sentence-transformers`, OpenAI) via les
@@ -45,11 +45,11 @@ corpus de vérité-terrain. Voir [BENCHMARK.md](BENCHMARK.md) pour les détails.
 | Métrique | Naïf (sans ER) | Full LLM ER | AutoGraft (hybride) |
 | :--- | :---: | :---: | :---: |
 | Mentions d'entités | 3000 | 3000 | 3000 |
-| Appels API LLM ER | 0 | 3000 | **238** (92.1% local) |
-| Tokens consommés | 0 | 661 714 | **52 496** |
-| Coût LLM ER | $0.000 | $0.0334 | **$0.00265** |
-| Nœuds finaux du graphe | 3000 | 63 | 103 |
-| Précision / Rappel | — | — | **100% / 98.6%** |
+| Appels API LLM ER | 0 | 3000 | **7** (99.8% local) |
+| Tokens consommés | 0 | 661 714 | **1 566** |
+| Coût LLM ER | $0.000 | $0.0334 | **$0.00008** |
+| Nœuds finaux du graphe | 3000 | 63 | 81 |
+| Précision / Rappel | — | — | **100% / 99.4%** |
 
 ---
 
@@ -59,17 +59,22 @@ corpus de vérité-terrain. Voir [BENCHMARK.md](BENCHMARK.md) pour les détails.
 ### Figure 1.2 : Répartition par Couche de Résolution
 ![Figure 1.2](benchmark/assets/real_layers.png)
 
+- `deterministic_match` : 2869 (95.6%) — correspondance exacte/alias/lexical, 0 token
+- `semantic_match` : 3 (0.1%) — similarité cosinus ≥ 0.85, 0 token
+- `llm_merge` : 7 (0.2%) — fusion confirmée par LLM
+- `no_match_declined` : 121 (4.0%) — nouveau nœud unique ou fusion manquée
+
 ### Figure 1.3 : Évolution des Coûts (coût mesuré par doc, projection linéaire)
-Pour 1 000 000 de documents, AutoGraft maintient le coût ER LLM autour de **5 300 $**
-contre **66 400 $** pour une approche full-LLM (~92% d'économie).
+Pour 1 000 000 de documents, AutoGraft maintient le coût ER LLM autour de **0,16 $**
+contre **66 800 $** pour une approche full-LLM (~99.999% d'économie).
 
 ![Figure 1.3](benchmark/assets/real_cost_scaling.png)
 
 ### Figure 1.4 : Précision vs Vérité-Terrain
 ![Figure 1.4](benchmark/assets/real_accuracy.png)
 
-*Pour la méthodologie complète et les limites honnêtes (les ~40 fusions manquées),
-voir [BENCHMARK.md](BENCHMARK.md).*
+*Pour la méthodologie complète et les limites honnêtes (les ~18 fusions manquées
+sans alias_map, ~4 avec alias_map), voir [BENCHMARK.md](BENCHMARK.md).*
 
 ---
 
@@ -95,11 +100,12 @@ autograft_graph = AutoGraftNeo4jMiddleware(graph, config=config)
 
 ---
 
-## Architecture (Court-Circuit à 3 Couches)
+## Architecture (Court-Circuit à 4 Couches)
 
 1. **Couche 1 (Déterministe)** : Correspondance exacte & alias via rapidfuzz (0 token, 0.1ms).
-2. **Couche 2 (Sémantique)** : Similarité cosinus vectorielle via numpy (0 token, 0.5ms).
-3. **Couche 3 (Arbitre LLM)** : Appel LiteLLM UNIQUEMENT pour les cas ambigus résiduels.
+2. **Couche 1.5 (Lexicale)** : Suppression de suffixes + détection d'acronymes (0 token, 0.1ms).
+3. **Couche 2 (Sémantique)** : Similarité cosinus vectorielle via numpy (0 token, 0.5ms).
+4. **Couche 3 (Arbitre LLM)** : Appel LiteLLM UNIQUEMENT pour les cas ambigus résiduels.
 
 ---
 
