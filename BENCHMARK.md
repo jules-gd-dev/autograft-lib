@@ -59,47 +59,65 @@ the same ER engine the Neo4j middleware uses, minus the database round-trip.
 
 ## 3. Results (500 docs / 3000 entities / 63 identities)
 
+### 3.1 Default config (no alias_map)
+
 | Metric | Naive (no ER) | Full LLM ER | AutoGraft (hybrid) |
 | :--- | ---: | ---: | ---: |
 | Entity mentions | 3 000 | 3 000 | 3 000 |
-| LLM ER API calls | 0 | 3 000 | **238** (92.1% local) |
-| Tokens consumed | 0 | 661 714 | **52 496** |
-| LLM ER cost | $0.000 | $0.0334 | **$0.00265** |
-| Final graph nodes | 3 000 | 63 | 103 |
+| LLM ER API calls | 0 | 3 000 | **7** (99.8% local) |
+| Tokens consumed | 0 | 661 714 | **1 566** |
+| LLM ER cost | $0.000 | $0.0334 | **$0.00008** |
+| Final graph nodes | 3 000 | 63 | 81 |
 | Duplicate nodes created | 2 937 | 0 | 0 |
 | Precision | — | — | 100.00% |
-| Recall | — | — | 98.64% |
-| F1 | — | — | 99.31% |
-| Latency (mean / max) | — | — | 6.5 ms / 280 ms |
+| Recall | — | — | 99.39% |
+| F1 | — | — | 99.69% |
+| Latency (mean / max) | — | — | 0.29 ms / 122 ms |
 
-### 3.1 Layer distribution (raw counts)
-![Layer distribution](benchmark/assets/real_layers.png)
+#### Layer distribution (default config)
+- `deterministic_match`: 2869 (95.6%) — exact/alias/lexical re-occurrence, 0 tokens
+- `semantic_match`: 3 (0.1%) — cosine ≥ 0.85, 0 tokens
+- `llm_merge`: 7 (0.2%) — LLM confirmed the merge
+- `no_match_declined`: 121 (4.0%) — new unique node or missed merge
 
-- `deterministic_match`: 2423 (80.8%) — exact/alias re-occurrence, 0 tokens
-- `semantic_match`: 242 (8.1%) — cosine ≥ 0.85, 0 tokens
-- `llm_merge`: 232 (7.7%) — LLM confirmed the merge
-- `llm_declined`: 6 (0.2%) — LLM correctly refused a false merge
-- `no_match_declined`: 97 (3.2%) — new unique node, no candidate
+### 3.2 With alias_map (catalog tickers + rebrands)
 
-### 3.2 Metrics comparison
+| Metric | Default | + alias_map |
+| :--- | ---: | ---: |
+| LLM ER API calls | 7 | **1** |
+| Final graph nodes | 81 | 67 |
+| Precision | 100.00% | 100.00% |
+| Recall | 99.39% | **99.86%** |
+| Declined merges | 18 | 4 |
+
+#### Layer distribution (alias_map)
+- `deterministic_match`: 2900 (96.7%)
+- `semantic_match`: 6 (0.2%)
+- `llm_merge`: 1 (0.03%)
+- `no_match_declined`: 93 (3.1%)
+
+### 3.3 Metrics comparison
 ![Metrics](benchmark/assets/real_metrics.png)
 
 ---
 
 ## 4. Honest limitations (what it misses)
 
-**40 mentions missed merging** (recall 98.64%, precision 100%). The misses are
-genuinely hard pairs that neither fuzzy strings nor MiniLM embeddings can bridge:
+**Default config: 18 mentions missed merging** (recall 99.39%, precision 100%).
+The remaining misses are pairs that neither fuzzy strings nor MiniLM embeddings
+can bridge without an explicit mapping:
 
-- **Stock tickers:** `GOOGL`→Google, `TSLA`→Tesla, `AMZN`→Amazon, `GS`→Goldman
-  Sachs, `MA`→Mastercard
-- **Unrelated full names:** `British Petroleum`→BP, `World Health Organization`→WHO,
-  `American International Group`→AIG, `Securities and Exchange Commission`→SEC
-- **Rebrand/name splits:** `Facebook`→Meta, `Alphabet Inc`→Google, `Meta Platforms`→Meta
+- **Stock tickers without alias_map:** `MSFT`→Microsoft, `NVDA`→NVIDIA, `BRK`→Berkshire
+  Hathaway, `MA`→Mastercard, `TSLA`→Tesla, `AMZN`→Amazon
+- **Rebrands without alias_map:** `Facebook`→Meta, `Alphabet Inc`→Google,
+  `Meta Platforms`→Meta
+- **Name variants without local signal:** `Citibank`↔`Citi` (same identity, no
+  acronym/suffix bridge), `Royal Dutch Shell`↔`Shell`, `BofA`↔`Bank of America`,
+  `JPMorgan`↔`JPMorgan Chase`, `Apple Inc`↔`Apple` (first-occurrence ordering)
 
-These fall below the cosine uncertainty threshold (0.75) so never reach the LLM.
-This is a **real trade-off**, not a bug: lowering the threshold would raise recall
-but cost more LLM calls and risk false merges.
+**With alias_map: 4 mentions missed** (recall 99.86%, precision 100%).
+The remaining 4 are first-occurrence ordering edge cases where the variant
+appeared before the canonical name and alias accumulation hasn't kicked in yet.
 
 ### 4.1 Accuracy
 ![Accuracy](benchmark/assets/real_accuracy.png)
@@ -123,4 +141,6 @@ PYTHONPATH=. python3 benchmark/utils/real_charts.py        # regenerate charts
 ```
 
 Raw per-mention data (name, layer, correctness, latency, tokens) is saved to
-`benchmark/assets/real_benchmark_results.json` for full audit.
+`benchmark/assets/real_benchmark_results.json` (default config) and
+`benchmark/assets/real_benchmark_results_alias_map.json` (with catalog alias_map)
+for full audit.
