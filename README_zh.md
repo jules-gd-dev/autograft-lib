@@ -22,42 +22,53 @@ pip install autograft
 ## 为什么选择 AutoGraft？
 
 - **与 LLM 无关**：通过 litellm 支持 OpenAI、Groq、Ollama、OpenRouter 等。
-- **大幅降低成本**：通过本地解析，将实体解析的 Token 成本降低高达 100%。
+- **大幅降低成本**：在本地解析约 92% 的实体，将 LLM 实体解析成本降低约 92%。
 - **即插即用**：直接放在您的 Neo4j 数据库之前作为替代方案（只需 1 行代码）。
-- **极速性能**：C/C++ (RapidFuzz) 和 NumPy 本地匹配。
+- **极速性能**：RapidFuzz (C/C++) 和 NumPy 本地匹配（平均 6.5 毫秒/实体）。
+
+> **嵌入向量：** AutoGraft *消费* 嵌入向量，而不会*生成*它们。请通过节点属性
+> 提供预计算的向量（如 `sentence-transformers`、OpenAI）。参见 `AutoGraftConfig.embedding_attr`。
 
 ---
 
-## 性能基准测试 (200 份文档 / 4 个行业)
+## 性能基准测试 (500 份文档 / 10 个行业 — 真实运行)
 
-在涵盖 4 个关键场景的 **200 份真实企业文档**上进行了评估：**法律与合规**、**技术与企业软件**、**保险与风险管理**、以及**金融与投资银行**。
+在 **500 份文档**上评估，包含 **3 000 条实体提及**，涵盖 10 个行业的 **63 个真实
+身份**，带有真正的歧义（缩写、股票代码、同音异义词）。无缩放系数 — 完整的 500 份
+文档运行已执行。
 
-*配置的 LLM 引擎*：**`groq/llama-3.1-8b-instant`** 用于提取和仲裁，**`groq/llama-3.3-70b-versatile`** 用于精确度审计。
+*方法论：* 真实的 `all-MiniLM-L6-v2` 嵌入，真实的 Groq LLM 仲裁调用
+(`groq/llama-3.1-8b-instant`)，真实的 `litellm` 定价。精确度对照真值语料库测量。
+详见 [BENCHMARK.md](BENCHMARK.md)。
 
-| 指标 | LangChain 原始 (无 ER) | LangChain + 全 LLM ER | LangChain + AutoGraft 混合 ER |
+| 指标 | 原始 (无 ER) | 全 LLM ER | AutoGraft (混合) |
 | :--- | :---: | :---: | :---: |
-| 处理的文档 | 200 份 | 200 份 | 200 份 |
-| 提取的实体 | 742 个 | 742 个 | 742 个 |
-| LLM ER API 调用 | 0 次 | 742 次 | 0 次 *(100% 本地短路)* |
-| 消耗的 Tokens | 0 tokens | 207,760 tokens | 0 tokens *(节省 100%)* |
-| 创建的重复项 | 188 个 | 0 个 | 0 个 |
-| 避免的重复项 (`MATCH`) | 0 次查询 | 188 次查询 | 188 次查询 |
-| 创建的新实体 (`MERGE`) | 742 次查询 | 554 次查询 | 554 次查询 |
-| LLM ER 成本 | $0.00000 | $0.04155 | $0.00000 |
-| 知识图谱质量 | 被重复项污染 | 已去重 (昂贵) | 已去重 & 零成本 |
+| 实体提及 | 3000 | 3000 | 3000 |
+| LLM ER API 调用 | 0 | 3000 | **238** (92.1% 本地) |
+| 消耗的 Tokens | 0 | 661,714 | **52,496** |
+| LLM ER 成本 | $0.000 | $0.0334 | **$0.00265** |
+| 最终图节点 | 3000 | 63 | 103 |
+| 精确率 / 召回率 | — | — | **100% / 98.6%** |
 
 ---
 
-### 图 1.1: 企业 RAG 实体解析性能指标
-![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
+### 图 1.1: 原始性能指标 (500 份真实文档)
+![Figure 1.1](benchmark/assets/real_metrics.png)
 
-### 图 1.2: 知识图谱成本扩展 (最高 1,000,000 份文档)
-对于 1,000,000 份文档，AutoGraft 保持 **$0.00** 的 LLM 实体解析 API 成本，同时保证 100% 干净、无重复的知识图谱。
+### 图 1.2: 解析层分布
+![Figure 1.2](benchmark/assets/real_layers.png)
 
-![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png)
+### 图 1.3: 成本扩展 (实测每文档成本，线性投影)
+对于 1,000,000 份文档，AutoGraft 将 LLM 实体解析成本保持在约 **$5,300**，
+而全 LLM 方法为 **$66,400**（节省约 92%）。
 
-### 图 1.3: 各行业实体解析精确度 (总体 100.0%)
-![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png)
+![Figure 1.3](benchmark/assets/real_cost_scaling.png)
+
+### 图 1.4: 精确率 vs 真值
+![Figure 1.4](benchmark/assets/real_accuracy.png)
+
+*完整的评估方法论和诚实的局限性说明（约 40 个漏合并），请参见
+[BENCHMARK.md](BENCHMARK.md)。*
 
 ---
 

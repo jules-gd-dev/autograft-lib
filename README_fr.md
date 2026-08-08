@@ -22,42 +22,54 @@ pip install autograft
 ## Pourquoi AutoGraft ?
 
 - **Agnostique aux LLM** : Fonctionne avec OpenAI, Groq, Ollama, OpenRouter via litellm.
-- **Réduction massive des coûts** : Réduit les coûts de tokens de l'Entity Resolution jusqu'à 100% en résolvant localement.
-- **Plug & Play** : Remplacement direct avant votre base de données Neo4j (en 1 ligne de code).
-- **Extrêmement Rapide** : C/C++ (RapidFuzz) et correspondance locale NumPy.
+- **Réduction majeure des coûts** : Résout ~92% des entités localement, réduisant le coût de l'ER LLM d'environ 92%.
+- **Plug & Play** : Remplacement direct avant votre base Neo4j (1 ligne de code).
+- **Extrêmement Rapide** : RapidFuzz (C/C++) et NumPy (moyenne 6.5 ms/entité).
+
+> **Embeddings :** AutoGraft *consomme* les embeddings, il ne les *crée* pas.
+> Fournissez des vecteurs pré-calculés (ex. `sentence-transformers`, OpenAI) via les
+> propriétés des nœuds. Voir `AutoGraftConfig.embedding_attr`.
 
 ---
 
-## Benchmark de Performance (200 Documents / 4 Industries)
+## Benchmark de Performance (500 Documents / 10 Industries — Exécution Réelle)
 
-Évalué sur **200 documents d'entreprise réels** couvrant 4 scénarios clés : **Juridique & Conformité**, **Tech & Logiciel d'Entreprise**, **Assurance & Gestion des Risques**, et **Finance & Banque d'Investissement**.
+Évalué sur **500 documents** contenant **3 000 mentions d'entités** de **63 identités
+réelles** sur 10 secteurs, avec de vraies ambiguïtés (abréviations, tickers boursiers,
+homonymes). Aucun facteur d'échelle — l'exécution complète sur 500 docs a été faite.
 
-*Moteur LLM configuré* : **`groq/llama-3.1-8b-instant`** pour l'extraction & l'arbitrage, et **`groq/llama-3.3-70b-versatile`** pour l'audit de précision.
+*Méthodologie :* vrais embeddings `all-MiniLM-L6-v2`, vrais appels LLM Groq
+(`groq/llama-3.1-8b-instant`), vrais prix `litellm`. Précision mesurée contre un
+corpus de vérité-terrain. Voir [BENCHMARK.md](BENCHMARK.md) pour les détails.
 
-| Métrique | LangChain Naïf (Pas d'ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybride ER |
+| Métrique | Naïf (sans ER) | Full LLM ER | AutoGraft (hybride) |
 | :--- | :---: | :---: | :---: |
-| Documents Traités | 200 documents | 200 documents | 200 documents |
-| Entités Extraites | 742 entités | 742 entités | 742 entités |
-| Appels API LLM ER | 0 appels | 742 appels | 0 appels *(Court-circuit local à 100%)* |
-| Tokens Consommés | 0 tokens | 207,760 tokens | 0 tokens *(100% d'Économie)* |
-| Doublons Créés | 188 doublons | 0 doublons | 0 doublons |
-| Doublons Évités (`MATCH`) | 0 requêtes | 188 requêtes | 188 requêtes |
-| Nouvelles Entités Créées (`MERGE`) | 742 requêtes | 554 requêtes | 554 requêtes |
-| Coût LLM ER | $0.00000 | $0.04155 | $0.00000 |
-| Qualité du Knowledge Graph | Pollué de Doublons | Dédupliqué (Coûteux) | Dédupliqué & Gratuit |
+| Mentions d'entités | 3000 | 3000 | 3000 |
+| Appels API LLM ER | 0 | 3000 | **238** (92.1% local) |
+| Tokens consommés | 0 | 661 714 | **52 496** |
+| Coût LLM ER | $0.000 | $0.0334 | **$0.00265** |
+| Nœuds finaux du graphe | 3000 | 63 | 103 |
+| Précision / Rappel | — | — | **100% / 98.6%** |
 
 ---
 
-### Figure 1.1: Métriques de Performance RAG d'Entreprise
-![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
+### Figure 1.1 : Métriques de Performance Brutes (500 docs réels)
+![Figure 1.1](benchmark/assets/real_metrics.png)
 
-### Figure 1.2: Évolution des Coûts (Jusqu'à 1,000,000 de Documents)
-Pour 1,000,000 de documents, AutoGraft maintient **$0.00** de coût LLM API pour l'Entity Resolution tout en garantissant un Graphe de Connaissances propre à 100%.
+### Figure 1.2 : Répartition par Couche de Résolution
+![Figure 1.2](benchmark/assets/real_layers.png)
 
-![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png)
+### Figure 1.3 : Évolution des Coûts (coût mesuré par doc, projection linéaire)
+Pour 1 000 000 de documents, AutoGraft maintient le coût ER LLM autour de **5 300 $**
+contre **66 400 $** pour une approche full-LLM (~92% d'économie).
 
-### Figure 1.3: Précision par Secteur (100.0% Global)
-![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png)
+![Figure 1.3](benchmark/assets/real_cost_scaling.png)
+
+### Figure 1.4 : Précision vs Vérité-Terrain
+![Figure 1.4](benchmark/assets/real_accuracy.png)
+
+*Pour la méthodologie complète et les limites honnêtes (les ~40 fusions manquées),
+voir [BENCHMARK.md](BENCHMARK.md).*
 
 ---
 
