@@ -28,8 +28,7 @@ def test_langchain_middleware_deduplication() -> None:
 
     middleware.add_graph_documents([doc])
 
-    # Assert Neo4j query was called for 'Company' and 'Product'
-    assert mock_neo4j.query.call_count == 2
+    assert mock_neo4j.query.call_count == 3
 
     # Assert nodes were updated in-place (canonicalized)
     assert doc.nodes[0].id == "Apple Inc."  # Deduplicated!
@@ -72,6 +71,7 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
     # Assert both source and target relationships remapped
     assert doc.relationships[0].source.id == "Apple Inc."
     assert doc.relationships[0].target.id == "iPhone 15"
+    assert mock_neo4j.query.call_count == 4
 
     # Now add document with an uncached node type
     node_new = Node(id="UncachedEntity", type="UncachedType")
@@ -79,6 +79,7 @@ def test_langchain_middleware_relationship_remapping_and_cache() -> None:
         nodes=[node_new], relationships=[], source=Document(page_content="")
     )
     middleware.add_graph_documents([doc_uncached])
+    assert mock_neo4j.query.call_count == 5
 
 
 def test_langchain_middleware_semantic_match() -> None:
@@ -112,6 +113,7 @@ def test_langchain_middleware_semantic_match() -> None:
 
     # Assert nodes were updated in-place (canonicalized via semantic match)
     assert doc.nodes[0].id == "Apple Inc."
+    assert mock_neo4j.query.call_count == 4  # exact + vector index + semantic + persist
 
     # Test Exception Handling in semantic candidates
     def mock_query_err(query: str, **kwargs) -> list[dict]:
@@ -130,3 +132,6 @@ def test_langchain_middleware_semantic_match() -> None:
     middleware.add_graph_documents([doc_err])
     # Fails gracefully
     assert doc_err.nodes[0].id == "Apple"
+    assert (
+        mock_neo4j.query.call_count == 6
+    )  # first doc(4) + second doc(2), index cached

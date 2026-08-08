@@ -2,12 +2,20 @@
 
 from unittest.mock import MagicMock, patch
 
-from autograft.config import AutoGraftConfig
+from autograft.config import AutoGraftConfig, alias_key
 from autograft.core.resolver import resolve_entity
 from autograft.integrations.langchain import AutoGraftNeo4jMiddleware
 from autograft.integrations.llamaindex import AutoGraftLlamaIndexMiddleware
 from autograft.layers.llm_arbiter import _ask_llm
 from autograft.models.entities import Entity, ExistingNode
+
+
+def test_alias_key_normalization() -> None:
+    """alias_key uppercases and strips to alnum (V3)."""
+    assert alias_key("MSFT") == "MSFT"
+    assert alias_key("msft") == "MSFT"
+    assert alias_key("Face book") == "FACEBOOK"
+    assert alias_key("a&b") == "AB"
 
 
 def test_autograft_config_defaults() -> None:
@@ -18,6 +26,31 @@ def test_autograft_config_defaults() -> None:
     assert cfg.api_base is None
     assert cfg.match_threshold == 0.85
     assert cfg.uncertainty_threshold == 0.75
+
+
+def test_autograft_config_alias_map_keys_normalized() -> None:
+    """Alias_map keys are normalized at config creation (V3)."""
+    cfg = AutoGraftConfig(alias_map={"msft": "Microsoft", "FACEBOOK": "Meta"})
+    assert "MSFT" in cfg.alias_map
+    assert "FACEBOOK" in cfg.alias_map
+    assert cfg.alias_map["MSFT"] == "Microsoft"
+    assert cfg.alias_map["FACEBOOK"] == "Meta"
+
+
+def test_autograft_config_lexical_flags_default() -> None:
+    """Lexical flags default to enabled (signals ON by default)."""
+    cfg = AutoGraftConfig()
+    assert cfg.lexical_suffix_disable is False
+    assert cfg.lexical_acronym_disable is False
+
+
+def test_autograft_config_lexical_flags_disable() -> None:
+    cfg = AutoGraftConfig(
+        lexical_suffix_disable=True,
+        lexical_acronym_disable=True,
+    )
+    assert cfg.lexical_suffix_disable is True
+    assert cfg.lexical_acronym_disable is True
 
 
 def test_autograft_config_custom_values() -> None:
