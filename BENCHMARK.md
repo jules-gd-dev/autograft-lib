@@ -60,6 +60,11 @@ The macro benchmark suite evaluates **200 real-world enterprise documents** acro
 
 *(Note: Figure 1.4 is a mathematical projection based on the algorithmic time complexity calculated below, demonstrating the scalability difference at 1 million documents.)*
 
+#### Figure 1.5: Multi-Hop Query Hit Rate (Real-world Retrieval)
+![Figure 1.5: Hit Rate Comparison (Naive vs AutoGraft)](benchmark/assets/hit_rate.png)
+
+*(Note: Without Entity Resolution, Naive GraphRAG spreads context across multiple disconnected fragment nodes, causing multi-hop retrieval algorithms to fail early. AutoGraft unifies these fragments, boosting retrieval success from ~24% to 98%+.)*
+
 ### 2.3 Algorithmic Time Complexity ($O(N \log M)$ vs $O(N \times M)$)
 
 When adding $N$ new entities to a Knowledge Graph containing $M$ existing entities, a standard "Full LLM" pipeline evaluates each incoming entity against the database. Because this is essentially an all-to-all comparison in real-time, the naive time complexity scales at **$O(N \times M)$**, leading to exponential execution time curves and system crashes at scale.
