@@ -54,38 +54,30 @@ Evaluated across a massive suite of **500 real-world enterprise documents** span
 ---
 
 ### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (500 Docs / 10 Industries)
-![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png?v=4)
+![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png?v=5)
 
 *Detailed Metric Breakdown:*
-- **Top-Left (Total Tokens Consumed)**: LangChain Naive consumes 0 tokens (fails to deduplicate). Full LLM ER consumes massive tokens. AutoGraft slashes this by 83% by resolving most entities locally.
-- **Top-Right (LLM ER API Calls)**: AutoGraft only queries the LLM for the 16.6% of entities that are genuinely ambiguous (e.g., semantic collisions).
-- **Bottom-Left (Neo4j Duplicates Avoided)**: Both Full LLM and AutoGraft successfully avoid 1470 duplicates, resulting in 1530 clean unified nodes.
-- **Bottom-Right (Estimated LLM Cost)**: AutoGraft reduces the financial cost proportionally while maintaining 100% graph cleanliness.
+- **Camembert de Résolution** : Sur 3000 entités traitées en temps réel, 83.4% sont résolues localement (0$). Seules 16.6% parviennent jusqu'au LLM Arbiter car elles nécessitent une désambiguïsation profonde.
 
 ---
 
 ### Figure 1.2: Enterprise Knowledge Graph Cost Scaling (Up to 1,000,000 Documents)
-For 1,000,000 documents, AutoGraft slashes LLM Entity Resolution API costs drastically (from $30,000 to $10) while guaranteeing a 100% clean, deduplicated Knowledge Graph.
+For 1,000,000 documents, AutoGraft slashes LLM Entity Resolution API costs drastically (from $30,000 to $5,000) while guaranteeing a 100% clean, deduplicated Knowledge Graph.
 
-![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png?v=4)
-
----
-
-### Figure 1.3: Entity Resolution Precision by Industry Sector (100.0% Overall)
-![Figure 1.3](benchmark/assets/macro_accuracy_by_industry.png?v=4)
+![Figure 1.2](benchmark/assets/macro_cost_scaling_1m.png?v=5)
 
 ---
 
-### Figure 1.4: Entity Resolution Latency Scaling (Theoretical Projection)
-![Figure 1.4](benchmark/assets/macro_latency_scaling.png?v=4)
+### Figure 1.3: Entity Resolution Latency Scaling (Theoretical Projection)
+![Figure 1.3](benchmark/assets/macro_latency_scaling.png?v=5)
 
 *(Note: This chart is a mathematical projection based on algorithmic time complexity).* 
 *Why this matters:* The time required to insert entities into a graph using a naive LLM resolution approach explodes linearly ($O(N \times M)$). AutoGraft relies on Neo4j's native indexes (B-Tree & Vector) to achieve a logarithmic $O(N \log M)$ latency curve, keeping graph construction virtually instantaneous even at massive scales.
 
 ---
 
-### Figure 1.5: Multi-Hop Query Hit Rate (Real-world Retrieval)
-![Figure 1.5: Hit Rate Comparison (Naive vs AutoGraft)](benchmark/assets/hit_rate.png?v=4)
+### Figure 1.4: Multi-Hop Query Hit Rate (Real-world Retrieval)
+![Figure 1.4: Hit Rate Comparison (Naive vs AutoGraft)](benchmark/assets/hit_rate.png?v=5)
 
 *(Note: This metric measures the **downstream GraphRAG retrieval success rate**, not AutoGraft's internal precision (which remains at 100%). Without Entity Resolution, Naive GraphRAG spreads context across disconnected fragments, causing multi-hop algorithms to fail early. AutoGraft perfectly unifies these fragments (100% accuracy), which mechanically boosts the final application's retrieval success from ~24% to 98%+.)*
 
