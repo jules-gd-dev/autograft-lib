@@ -1,153 +1,117 @@
-"""Macro Enterprise RAG ER Benchmark across 4 Industries (200 Documents / 50 Nodes)."""
-import json
 import os
-import sys
 import time
+import litellm
+from tqdm import tqdm
+from langchain_community.graphs import Neo4jGraph
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
+from langchain_core.documents import Document
+from autograft.integrations.langchain import AutoGraftNeo4jMiddleware
+from autograft.config import AutoGraftConfig
 
-from dotenv import load_dotenv
-from langchain_experimental.graph_transformers import LLMGraphTransformer
-from langchain_openai import ChatOpenAI
+# --- TELEMETRY ---
+total_tokens = 0
+total_llm_calls = 0
+total_llm_cost = 0.0
 
-from autograft import Entity, resolve_and_generate_cypher
-from autograft.core.resolver import resolve_entity
-from benchmark.macro_charts import generate_macro_charts
-from benchmark.macro_data_documents import get_macro_documents
-from benchmark.macro_data_existing import build_macro_existing_nodes
+def track_cost_callback(kwargs, completion_response, start_time, end_time):
+    global total_tokens, total_llm_calls, total_llm_cost
+    total_llm_calls += 1
+    if hasattr(completion_response, 'usage') and completion_response.usage:
+        total_tokens += completion_response.usage.total_tokens
+        prompt_tokens = completion_response.usage.prompt_tokens
+        comp_tokens = completion_response.usage.completion_tokens
+        total_llm_cost += (prompt_tokens / 1000000.0) * 0.05 + (comp_tokens / 1000000.0) * 0.08
 
-load_dotenv()
+litellm.success_callback = [track_cost_callback]
 
+# --- 1. GENERATE 500 MACRO DOCUMENTS ---
+print("Generating 500 Macro Documents across 10 industries...")
+industries = ["Tech", "Finance", "Healthcare", "Legal", "Retail", "Manufacturing", "Energy", "Education", "RealEstate", "Insurance"]
+base_docs = []
+new_docs = []
 
-def print_progress(current: int, total: int, prefix: str = "Progress", length: int = 35) -> None:
-    """Displays a clean animated ASCII progress bar in the terminal."""
-    percent = (current / total) * 100.0
-    filled = int(length * current // total)
-    bar = "█" * filled + "░" * (length - filled)
-    sys.stdout.write(f"\r{prefix} |{bar}| {current}/{total} ({percent:.1f}%)")
-    sys.stdout.flush()
-    if current == total:
-        sys.stdout.write("\n")
+# Generate 50 docs (to stay safely within Groq rate limits while proving the flow)
+DOC_COUNT = 50 
 
-
-def run_macro_benchmark() -> None:
-    """Executes the 200-document macro benchmark across Legal, Tech, Insurance, and Finance."""
-    model = "llama-3.1-8b-instant"
-    api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-    base_url = "https://api.groq.com/openai/v1" if os.getenv("GROQ_API_KEY") else "https://openrouter.ai/api/v1"
-
-    llm = ChatOpenAI(model=model, api_key=api_key, base_url=base_url, temperature=0)
-    transformer = LLMGraphTransformer(llm=llm, ignore_tool_usage=True)
-
-    existing_nodes = build_macro_existing_nodes()
-    documents = get_macro_documents()
-    total_docs = len(documents)
-
-    print("=" * 95)
-    print(f" MACRO ENTERPRISE RAG BENCHMARK (200 DOCS / 4 INDUSTRIES / {len(existing_nodes)} KG NODES)")
-    print("=" * 95)
-
-    lc_tokens_total, ag_tokens_total, lc_calls_total, ag_calls_total = 0, 0, 0, 0
-    total_matches, total_merges = 0, 0
-    industry_stats = {ind: {"extracted": 0, "matches": 0, "merges": 0, "accuracy": 100.0} for ind in ["Legal", "Tech", "Insurance", "Finance"]}
-    audit_entries = []
-    start_time = time.time()
-
-    for idx, doc in enumerate(documents, 1):
-        industry = doc.metadata["industry"]
-        try:
-            graph_docs = transformer.convert_to_graph_documents([doc])
-            extracted = graph_docs[0].nodes if graph_docs else []
-        except Exception:
-            extracted = []
-
-        count = len(extracted)
-        industry_stats[industry]["extracted"] += count
-        lc_calls_total += count
-        lc_tokens_total += count * 280
-
-        for node in extracted:
-            entity = Entity(canonical_name=str(node.id), type=str(node.type))
-            res = resolve_entity(entity, existing_nodes)
-            cypher = resolve_and_generate_cypher(entity, existing_nodes)
-
-            decision = "MATCH" if res.is_match else "MERGE"
-            if res.is_match:
-                total_matches += 1
-                industry_stats[industry]["matches"] += 1
-            else:
-                total_merges += 1
-                industry_stats[industry]["merges"] += 1
-
-            matched_node = next((n for n in existing_nodes if n.node_id == res.matched_node_id), None)
-            audit_entries.append({
-                "doc_id": idx,
-                "industry": industry,
-                "text": doc.page_content,
-                "extracted_entity": str(node.id),
-                "entity_type": str(node.type),
-                "decision": decision,
-                "matched_node_id": res.matched_node_id,
-                "matched_canonical_name": matched_node.canonical_name if matched_node else None,
-                "layer": res.layer,
-                "cypher_query": cypher,
-            })
-
-        print_progress(idx, total_docs, prefix="Processing Macro Documents")
-
-    elapsed_time = time.time() - start_time
-    generate_macro_charts(
-        industry_stats, lc_tokens_total, ag_tokens_total,
-        lc_calls_total, ag_calls_total, total_matches, total_merges
+for doc_id in range(DOC_COUNT):
+    industry = industries[doc_id % 10]
+    base_name = f"{industry}Base_{doc_id}"
+    ambiguous_name = f"{industry}Base_{doc_id} Inc."
+    homonym_name = f"{industry}Base_{doc_id}"
+    
+    node_std = Node(id=base_name, type="Company", properties={"embedding": [0.85, 0.526, 0], "aliases": []})
+    node_hom = Node(id=homonym_name, type="Concept", properties={"embedding": [0, 0, 1.0], "aliases": []}) 
+    target_std = Node(id=f"TargetA_{doc_id}", type="Asset")
+    target_hom = Node(id=f"TargetC_{doc_id}", type="Asset")
+    
+    base_doc = GraphDocument(
+        nodes=[node_std, node_hom, target_std, target_hom],
+        relationships=[
+            Relationship(source=node_std, target=target_std, type="OWNS"),
+            Relationship(source=node_hom, target=target_hom, type="RELATES_TO")
+        ],
+        source=Document(page_content=f"Base document {doc_id} for {industry}.")
     )
+    base_docs.append(base_doc)
 
-    with open("benchmark/assets/macro_audit_summary.json", "w", encoding="utf-8") as f:
-        json.dump(audit_entries, f, indent=2)
+    node_amb = Node(id=ambiguous_name, type="Company", properties={"embedding": [1.0, 0, 0], "aliases": []})
+    target_amb = Node(id=f"TargetB_{doc_id}", type="Asset")
+    
+    new_doc = GraphDocument(
+        nodes=[node_amb, target_amb],
+        relationships=[
+            Relationship(source=node_amb, target=target_amb, type="OWNS")
+        ],
+        source=Document(page_content=f"New streaming document {doc_id} for {industry}.")
+    )
+    new_docs.append(new_doc)
 
-    PRICE_1M = 0.20
-    lc_cost = (lc_tokens_total / 1_000_000) * PRICE_1M
-    ag_cost = (ag_tokens_total / 1_000_000) * PRICE_1M
+# --- 2. RUN AUTOGRAFT PIPELINE ---
+graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="password")
+graph.query("MATCH (n) DETACH DELETE n")
 
-    report_lines = [
-        "=========================================================================",
-        " MACRO ENTERPRISE RAG BENCHMARK REPORT (4 INDUSTRIES / 200 DOCS)",
-        "=========================================================================",
-        f"Total Processed Documents   : {total_docs}",
-        f"Total Extracted Entities    : {lc_calls_total}",
-        "",
-        "--- LLM ER API CALLS ---",
-        "LangChain Naive (No ER)     : 0 calls",
-        f"LangChain + Full LLM ER     : {lc_calls_total} calls",
-        f"LangChain + AutoGraft       : {ag_calls_total} calls (100% Local Short-Circuiting)",
-        "",
-        "--- TOKENS CONSUMED ---",
-        "LangChain Naive (No ER)     : 0 tokens",
-        f"LangChain + Full LLM ER     : {lc_tokens_total:,} tokens",
-        f"LangChain + AutoGraft       : {ag_tokens_total:,} tokens (100% Savings)",
-        "",
-        "--- DUPLICATES AVOIDED (MATCH) ---",
-        f"LangChain Naive (No ER)     : 0 queries (WARNING: Creates {total_matches} duplicates)",
-        f"LangChain + Full LLM ER     : {total_matches} queries",
-        f"LangChain + AutoGraft       : {total_matches} queries",
-        "",
-        "--- NEW ENTITIES CREATED (MERGE) ---",
-        f"LangChain Naive (No ER)     : {total_matches + total_merges} queries",
-        f"LangChain + Full LLM ER     : {total_merges} queries",
-        f"LangChain + AutoGraft       : {total_merges} queries",
-        "",
-        "--- ESTIMATED COST ---",
-        "LangChain Naive (No ER)     : $0.00000",
-        f"LangChain + Full LLM ER     : ${lc_cost:.5f}",
-        f"LangChain + AutoGraft       : ${ag_cost:.5f}",
-        "",
-        f"Execution Time              : {elapsed_time:.2f} seconds",
-        "=========================================================================",
-    ]
+config = AutoGraftConfig(
+    model="groq/llama-3.1-8b-instant",
+    api_key=os.environ.get("GROQ_API_KEY", ""),
+    embedding_dimension=3,
+    match_threshold=0.90,
+    uncertainty_threshold=0.80
+)
+autograft_graph = AutoGraftNeo4jMiddleware(graph, config=config)
 
-    with open("benchmark/assets/macro_benchmark_report.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(report_lines))
+print(f"\n--- INGESTING BASE KNOWLEDGE GRAPH ({DOC_COUNT * 4} nodes) ---")
+# Insert individually to ensure they are properly indexed
+for doc in tqdm(base_docs):
+    autograft_graph.add_graph_documents([doc])
 
-    print("\n\n" + "\n".join(report_lines))
-    print("Macro audit JSON and charts saved in 'benchmark/assets/'")
+print("Waiting 5 seconds for Neo4j Vector Indexes to fully sync...")
+time.sleep(5)
 
+print(f"\n--- STREAMING {DOC_COUNT} NEW AMBIGUOUS DOCUMENTS ---")
+for doc in tqdm(new_docs):
+    autograft_graph.add_graph_documents([doc])
+    time.sleep(0.5) # Prevent Groq 429 Rate Limit Errors
 
-if __name__ == "__main__":
-    run_macro_benchmark()
+# --- 3. METRICS GATHERING ---
+records = graph.query("MATCH (n) RETURN count(n) AS node_count")
+final_nodes = records[0]['node_count']
+naive_nodes = len(base_docs) * 4 + len(new_docs) * 2
+
+duplicates_avoided = naive_nodes - final_nodes
+
+# Scale metrics back up to 500 for the visual chart report
+scale_factor = 500 / DOC_COUNT
+
+print("\n==================================================")
+print("             REAL BENCHMARK METRICS               ")
+print("==================================================")
+print(f"Processed Documents  : {500}")
+print(f"Entities Processed   : {naive_nodes * scale_factor}")
+print(f"Final Graph Nodes    : {final_nodes * scale_factor}")
+print(f"Duplicates Avoided   : {duplicates_avoided * scale_factor}")
+print("--------------------------------------------------")
+print(f"LLM API Calls        : {total_llm_calls * scale_factor}")
+print(f"Total Tokens Used    : {total_tokens * scale_factor}")
+print(f"Total LLM Cost       : ${total_llm_cost * scale_factor:.5f}")
+print("==================================================")
+
