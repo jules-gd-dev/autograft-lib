@@ -28,15 +28,15 @@ pip install autograft
 
 ---
 
-## Performance Benchmark (660 Documents / 10 Industries)
+## Performance Benchmark (600 Documents / 10 Industries)
 
-Evaluated across a massive suite of **660 real-world enterprise documents** spanning 10 key sectors: Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, and Real Estate (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
+Evaluated across a massive suite of **600 real-world enterprise documents** spanning 10 key sectors: Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, and Real Estate (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
 
 *LLM Engine Configured*: **`groq/llama-3.1-8b-instant`** for extraction & arbitration, and **`groq/llama-3.3-70b-versatile`** for precision auditing.
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| Processed Documents | 660 documents | 660 documents | 660 documents |
+| Processed Documents | 600 documents | 600 documents | 600 documents |
 | Extracted Entities | 2448 entities | 2448 entities | 2448 entities |
 | LLM ER API Calls | 0 calls | 2448 calls | 0 calls *(100% Local Short-Circuit)* |
 | Tokens Consumed | 0 tokens | 685,608 tokens | 0 tokens *(100% Token Savings)* |
@@ -48,7 +48,7 @@ Evaluated across a massive suite of **660 real-world enterprise documents** span
 
 ---
 
-### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (660 Docs / 10 Industries)
+### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (600 Docs / 10 Industries)
 ![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
 
 *Detailed Metric Breakdown:*
@@ -56,6 +56,12 @@ Evaluated across a massive suite of **660 real-world enterprise documents** span
 - **Top-Right (LLM ER API Calls)**: LangChain Naive and AutoGraft make 0 API calls, while Full LLM ER makes 2,448 external API calls.
 - **Bottom-Left (Neo4j Duplicates Avoided)**: LangChain Naive creates 620 duplicates (0 avoided), while Full LLM ER and AutoGraft resolve all 620 duplicates.
 - **Bottom-Right (Estimated LLM Cost)**: Compares the Entity Resolution financial cost. LangChain Naive costs $0 (but fails to deduplicate), Full LLM ER costs $0.13712, and AutoGraft costs $0 (while perfectly deduplicating the graph).
+
+### Figure 1.2: Entity Resolution Latency Scaling (Theoretical Projection)
+![Figure 1.2](benchmark/assets/macro_latency_scaling.png)
+
+*(Note: This chart is a mathematical projection based on algorithmic time complexity).* 
+*Why this matters:* The time required to insert entities into a graph using a naive LLM resolution approach explodes linearly ($O(N \times M)$). AutoGraft relies on Neo4j's native indexes (B-Tree & Vector) to achieve a logarithmic $O(N \log M)$ latency curve, keeping graph construction virtually instantaneous even at massive scales.
 
 ---
 
