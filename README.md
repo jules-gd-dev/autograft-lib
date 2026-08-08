@@ -26,6 +26,11 @@ pip install autograft
 - **Plug & Play**: Drop-in replacement before your Neo4j database.
 - **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching.
 
+### The Problem vs The Solution
+Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates and semantic collisions. AutoGraft cleanly merges duplicates on-the-fly at $O(N \log M)$ complexity while preserving semantic boundaries (e.g. distinguishing Apple the company from Apple the fruit):
+
+![Figure 1.0: Concept Comparison](benchmark/assets/concept_comparison.png)
+
 ---
 
 ## Performance Benchmark (600 Documents / 10 Industries)
