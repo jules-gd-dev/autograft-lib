@@ -51,8 +51,10 @@ class AutoGraftLlamaIndexMiddleware(BaseGraphMiddleware):
             match_result = resolve_entity(entity, db_client=self, config=self.config)
 
             if match_result.is_match:
-                # Canonicalize the new node's name (which acts as ID in LlamaIndex)
                 node.name = str(match_result.matched_node_id)
+                self.persist_alias(
+                    str(match_result.matched_node_id), match_result.new_alias
+                )
 
         self.store.upsert_nodes(nodes)
 

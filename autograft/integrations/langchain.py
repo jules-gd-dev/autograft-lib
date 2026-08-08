@@ -61,6 +61,7 @@ class AutoGraftNeo4jMiddleware(BaseGraphMiddleware):
                     matched_id = str(match_result.matched_node_id)
                     id_mapping[node.id] = matched_id
                     node.id = matched_id
+                    self.persist_alias(matched_id, match_result.new_alias)
 
             # 2. Remap Relationships
             for rel in doc.relationships:

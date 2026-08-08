@@ -31,3 +31,4 @@ class MatchResult(BaseModel):
     score: float = 0.0
     layer: str = "deterministic"
     tokens_used: int = 0
+    new_alias: str | None = None

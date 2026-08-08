@@ -2,7 +2,15 @@
 
 import os
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def alias_key(name: str) -> str:
+    """Normalize a surface name to an alias_map lookup key (V3).
+
+    Uppercased, alphanumerics only: "MSFT"->"MSFT", "Face book"->"FACEBOOK".
+    """
+    return "".join(c for c in name.upper() if c.isalnum())
 
 
 class AutoGraftConfig(BaseModel):
@@ -35,3 +43,14 @@ class AutoGraftConfig(BaseModel):
         default="token_sort_ratio",
         description="fuzz matching algorithm (ratio, token_sort_ratio, token_set_ratio)",
     )
+
+    # Lexical Layer (V1, V3, V5) — surface->canonical map + opt-out flags.
+    alias_map: dict[str, str] = Field(default_factory=dict)
+    lexical_suffix_disable: bool = False
+    lexical_acronym_disable: bool = False
+
+    @field_validator("alias_map")
+    @classmethod
+    def _normalize_alias_keys(cls, value: dict[str, str]) -> dict[str, str]:
+        """Normalize alias_map keys so lookups are case/punctuation agnostic (V3)."""
+        return {alias_key(k): v for k, v in value.items()}

@@ -1,0 +1,30 @@
+{
+  "model": "groq/llama-3.1-8b-instant",
+  "total_mentions": 3000,
+  "unique_identities": 63,
+  "autograft": {
+    "llm_calls": 1,
+    "prompt_tokens": 216,
+    "completion_tokens": 3,
+    "total_tokens": 219,
+    "cost_usd": 1.104e-05,
+    "final_nodes": 67,
+    "layer_breakdown": {
+      "no_match_declined": 93,
+      "deterministic_match": 2900,
+      "semantic_match": 6,
+      "llm_merge": 1
+    },
+    "latency_mean_ms": 0.105,
+    "latency_max_ms": 136.591
+  },
+  "accuracy": {
+    "true_merges_possible": 2937.0,
+    "correct_merges": 2933.0,
+    "wrong_merges": 0.0,
+    "declined_merges": 4.0,
+    "precision": 1.0,
+    "recall": 0.9986380660537963,
+    "f1": 0.9993185689948892
+  }
+}

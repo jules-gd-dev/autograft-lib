@@ -22,9 +22,9 @@ pip install autograft
 ## Why AutoGraft?
 
 - **LLM-Agnostic**: Works with OpenAI, Groq, Ollama, OpenRouter via litellm.
-- **Major Cost Savings**: Resolves ~92% of entities locally, cutting LLM Entity Resolution cost by ~92%.
+- **Major Cost Savings**: Resolves ~99.8% of entities locally, cutting LLM Entity Resolution cost by ~99.8%.
 - **Plug & Play**: Drop-in replacement before your Neo4j database.
-- **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching (mean 6.5 ms/entity).
+- **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching (mean 0.3 ms/entity).
 
 > **Embeddings:** AutoGraft consumes embeddings — it does not generate them. Feed
 > pre-computed vectors (e.g. from `sentence-transformers`, OpenAI, etc.) via node
@@ -48,13 +48,13 @@ symbols, homonyms). No scaling factors — the full 500-doc run was executed.
 ground-truth corpus. See [BENCHMARK.md](BENCHMARK.md) for full details.
 
 | Metric | Naive (no ER) | Full LLM ER | AutoGraft (hybrid) |
-| :--- | :---: | :---: | :---: |
+| :--- | ---: | ---: | ---: |
 | Entity mentions | 3000 | 3000 | 3000 |
-| LLM ER API calls | 0 | 3000 | **238** (92.1% local) |
-| Tokens consumed | 0 | 661,714 | **52,496** |
-| LLM ER cost | $0.000 | $0.0334 | **$0.00265** |
-| Final graph nodes | 3000 | 63 | 103 |
-| Precision / Recall | — | — | **100% / 98.6%** |
+| LLM ER API calls | 0 | 3000 | **7** (99.8% local) |
+| Tokens consumed | 0 | 661,714 | **1,566** |
+| LLM ER cost | $0.000 | $0.0334 | **$0.00008** |
+| Final graph nodes | 3000 | 63 | 81 |
+| Precision / Recall | — | — | **100% / 99.4%** |
 
 ---
 
@@ -64,17 +64,22 @@ ground-truth corpus. See [BENCHMARK.md](BENCHMARK.md) for full details.
 ### Figure 1.2: Resolution Layer Distribution
 ![Figure 1.2](benchmark/assets/real_layers.png)
 
+- `deterministic_match`: 2869 (95.6%) — exact/alias/lexical re-occurrence, 0 tokens
+- `semantic_match`: 3 (0.1%) — cosine ≥ 0.85, 0 tokens
+- `llm_merge`: 7 (0.2%) — LLM confirmed the merge
+- `no_match_declined`: 121 (4.0%) — new unique node or missed merge
+
 ### Figure 1.3: Cost Scaling (measured per-doc cost, linear projection)
-For 1,000,000 documents, AutoGraft keeps LLM Entity Resolution cost near **$5,300**
-vs **$66,400** for a full-LLM approach (~92% savings).
+For 1,000,000 documents, AutoGraft keeps LLM Entity Resolution cost near **$0.16**
+vs **$66,800** for a full-LLM approach (~99.999% savings).
 
 ![Figure 1.3](benchmark/assets/real_cost_scaling.png)
 
 ### Figure 1.4: Accuracy vs Ground Truth
 ![Figure 1.4](benchmark/assets/real_accuracy.png)
 
-*For complete methodology, dataset documentation, and honest limitations (the ~40
-missed merges), see [BENCHMARK.md](BENCHMARK.md).*
+*For complete methodology, dataset documentation, and honest limitations (the ~18
+missed merges without alias_map, ~4 with alias_map), see [BENCHMARK.md](BENCHMARK.md).*
 
 ---
 
@@ -100,11 +105,12 @@ autograft_graph = AutoGraftNeo4jMiddleware(graph, config=config)
 
 ---
 
-## Architecture (3-Layer Short-Circuit)
+## Architecture (4-Layer Short-Circuit)
 
 1. **Layer 1 (Deterministic)**: Exact string match & alias matching via rapidfuzz (0 tokens, 0.1ms).
-2. **Layer 2 (Semantic)**: Vector cosine similarity via numpy (0 tokens, 0.5ms).
-3. **Layer 3 (LLM Arbiter)**: LiteLLM call ONLY for residual ambiguous cases (e.g., "J. Dupont" vs "Jean Dupont").
+2. **Layer 1.5 (Lexical)**: Suffix-strip core matching (fuzz≥90) + exact acronym detection (0 tokens, 0.1ms).
+3. **Layer 2 (Semantic)**: Vector cosine similarity via numpy (0 tokens, 0.5ms).
+4. **Layer 3 (LLM Arbiter)**: LiteLLM call ONLY for residual ambiguous cases (e.g., "J. Dupont" vs "Jean Dupont").
 
 ---
 
