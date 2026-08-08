@@ -82,6 +82,26 @@ class BaseGraphMiddleware(ABC):
             logger.debug(f"Query for exact candidates failed: {e}")
             return []
 
+    def persist_alias(self, node_id: str, alias: str | None) -> None:
+        """Best-effort append of the incoming name to the matched node's aliases (V2).
+
+        Mirrors production MERGE so later repeats of the same surface name are
+        caught by Layer 1 deterministically instead of re-escalating to the LLM.
+        """
+        if not alias:
+            return
+        id_attr = self.config.id_attr
+        aliases_attr = self.config.aliases_attr
+        query = (
+            f"MATCH (n) WHERE n.{id_attr} = $id "
+            f"SET n.{aliases_attr} = CASE WHEN $alias IN coalesce(n.{aliases_attr}, []) "
+            f"THEN n.{aliases_attr} ELSE coalesce(n.{aliases_attr}, []) + $alias END"
+        )
+        try:
+            self._execute_query(query, params={"id": node_id, "alias": alias})
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Failed to persist alias '{alias}' on '{node_id}': {e}")
+
     def find_semantic_candidates(
         self, entity: Entity, limit: int = 5
     ) -> list[ExistingNode]:
