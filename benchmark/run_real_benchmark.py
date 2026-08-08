@@ -44,6 +44,7 @@ def run() -> dict:
     )
 
     db_nodes: list[ExistingNode] = []
+    node_by_id: dict[str, ExistingNode] = {}
     node_canon: dict[str, str] = {}
     report = ResolutionReport(node_canon=node_canon)
     counter = 0
@@ -60,15 +61,20 @@ def run() -> dict:
             if res.is_match:
                 mid = res.matched_node_id
                 mcanon = node_canon.get(res.matched_node_id)
+                # V2: accumulate incoming name as alias on the matched node,
+                # mirroring production MERGE so later repeats hit L1 for free.
+                node = node_by_id.get(res.matched_node_id)
+                if node is not None and res.new_alias and res.new_alias not in node.aliases:
+                    node.aliases.append(res.new_alias)
             else:
                 nid = f"n{counter}"
                 counter += 1
-                db_nodes.append(
-                    ExistingNode(
-                        node_id=nid, canonical_name=m.name, type=m.type,
-                        embedding=emb_map[m.name],
-                    )
+                node = ExistingNode(
+                    node_id=nid, canonical_name=m.name, type=m.type,
+                    embedding=emb_map[m.name],
                 )
+                db_nodes.append(node)
+                node_by_id[nid] = node
                 node_canon[nid] = m.canonical_id
                 mid, mcanon = None, None
 
