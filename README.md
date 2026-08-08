@@ -29,7 +29,7 @@ pip install autograft
 ### The Problem vs The Solution
 Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates and semantic collisions. AutoGraft cleanly merges duplicates on-the-fly at $O(N \log M)$ complexity, correctly identifying that complex entity variations (e.g. "SpaceX" and "Space Exploration Technologies Corp.") refer to the exact same real-world entity:
 
-![Figure 1.0: Concept Comparison](benchmark/assets/concept_comparison.png)
+![Figure 1.0: Concept Comparison](benchmark/assets/concept_comparison.png?v=2)
 
 ---
 
