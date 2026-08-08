@@ -27,7 +27,7 @@ pip install autograft
 - **Blazing Fast**: C/C++ (RapidFuzz) and NumPy local matching.
 
 ### The Problem vs The Solution
-Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates and semantic collisions. AutoGraft cleanly merges duplicates on-the-fly at $O(N \log M)$ complexity while preserving semantic boundaries (e.g. distinguishing Apple the company from Apple the fruit):
+Without AutoGraft, extractors create fragmented knowledge graphs with disconnected duplicates and semantic collisions. AutoGraft cleanly merges duplicates on-the-fly at $O(N \log M)$ complexity, correctly identifying that complex entity variations (e.g. "SpaceX" and "Space Exploration Technologies Corp.") refer to the exact same real-world entity:
 
 ![Figure 1.0: Concept Comparison](benchmark/assets/concept_comparison.png)
 
