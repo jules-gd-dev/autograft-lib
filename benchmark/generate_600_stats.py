@@ -1,7 +1,7 @@
 from benchmark.macro_charts import generate_macro_charts
 
 
-def generate_660_charts():
+def generate_600_charts():
     industry_metrics = {
         "Legal": {"accuracy": 100.0},
         "Tech": {"accuracy": 100.0},
@@ -26,4 +26,4 @@ def generate_660_charts():
     )
 
 if __name__ == "__main__":
-    generate_660_charts()
+    generate_600_charts()

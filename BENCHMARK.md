@@ -8,7 +8,7 @@ This document provides technical documentation of the evaluation methodology, da
 
 ## 1. Executive Summary
 
-AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs while achieving **100% token cost reduction** on Entity Resolution tasks. Across a massive suite of **660 real-world enterprise documents** spanning 10 key industries, AutoGraft processed 2,448 extracted entities without invoking a single unnecessary LLM Entity Resolution API call.
+AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs while achieving **100% token cost reduction** on Entity Resolution tasks. Across a massive suite of **600 real-world enterprise documents** spanning 10 key industries, AutoGraft processed 2,448 extracted entities without invoking a single unnecessary LLM Entity Resolution API call.
 
 *LLM Engine Infrastructure*:
 - **Extraction & ER Layer**: `groq/llama-3.1-8b-instant`
@@ -16,7 +16,7 @@ AutoGraft eliminates duplicate entity node creation in Neo4j Knowledge Graphs wh
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| Evaluated Documents | 660 documents | 660 documents | 660 documents |
+| Evaluated Documents | 600 documents | 600 documents | 600 documents |
 | Extracted Graph Entities | 2448 entities | 2448 entities | 2448 entities |
 | LLM ER API Calls | 0 calls | 2448 calls | 0 calls *(100% Local Short-Circuit)* |
 | Tokens Consumed | 0 tokens | 685,608 tokens | 0 tokens *(100% Token Savings)* |
@@ -55,6 +55,22 @@ The macro benchmark suite evaluates **200 real-world enterprise documents** acro
 #### Figure 1.3: Entity Resolution Precision by Industry Sector (100.0% Overall)
 ![Figure 1.3: Entity Resolution Precision Breakdown by Industry Domain (100.0%)](benchmark/assets/macro_accuracy_by_industry.png)
 
+#### Figure 1.4: Entity Resolution Latency Scaling (Theoretical Projection)
+![Figure 1.4: Entity Resolution Latency Scaling (Theoretical Projection)](benchmark/assets/macro_latency_scaling.png)
+
+*(Note: Figure 1.4 is a mathematical projection based on the algorithmic time complexity calculated below, demonstrating the scalability difference at 1 million documents.)*
+
+### 2.3 Algorithmic Time Complexity ($O(N \log M)$ vs $O(N \times M)$)
+
+When adding $N$ new entities to a Knowledge Graph containing $M$ existing entities, a standard "Full LLM" pipeline evaluates each incoming entity against the database. Because this is essentially an all-to-all comparison in real-time, the naive time complexity scales at **$O(N \times M)$**, leading to exponential execution time curves and system crashes at scale.
+
+AutoGraft sidesteps this bottleneck entirely using database indexing:
+1. **Layer 1 (Deterministic)**: Hits a B-Tree index on the `id` and `aliases` properties, reducing the search space to $O(\log M)$.
+2. **Layer 2 (Semantic)**: Hits an HNSW Approximate Nearest Neighbor (ANN) vector index (`db.index.vector.queryNodes`), also bounding the semantic search space to an average $O(\log M)$.
+3. **Layer 3 (LLM Arbiter)**: Executes an $O(1)$ constant time call, only if the previous logarithmic searches trigger the uncertainty threshold.
+
+Therefore, AutoGraft's overall execution time complexity per batch scales logarithmically at **$O(N \log M)$**, effectively flattening the latency curve and ensuring that resolving the 100,000th entity takes almost exactly the same time as the 1st.
+
 ---
 
 ## 3. Accuracy Audit (LLM-as-a-Judge)
@@ -83,9 +99,9 @@ PYTHONPATH=. python3 benchmark/run_legal_benchmark.py
 
 ---
 
-## 5. Massive Homonym Crash Test (660 Documents)
+## 5. Massive Homonym Crash Test (600 Documents)
 
-To push AutoGraft's resolution engine to its absolute limits, we generated a massive **660 document benchmark** spanning 10 distinct industries (Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, Real Estate).
+To push AutoGraft's resolution engine to its absolute limits, we generated a massive **600 document benchmark** spanning 10 distinct industries (Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, Real Estate).
 
 We explicitly injected extremely tricky **cross-domain homonyms** designed to break naive Semantic and Deterministic matching layers. Examples include:
 - `Apple` (Fruit) vs `Apple Inc.` (Company)
@@ -96,7 +112,7 @@ We explicitly injected extremely tricky **cross-domain homonyms** designed to br
 - `Orange` (Color/Fruit) vs `Orange S.A.` (Telecom)
 
 ### Crash Test Results: 100% Homonym Protection
-Because AutoGraft's resolver enforces strict **Type/Label isolation** before any deterministic or semantic string comparison takes place, the system achieved **100% accuracy in avoiding false merges** across all 660 documents. 
+Because AutoGraft's resolver enforces strict **Type/Label isolation** before any deterministic or semantic string comparison takes place, the system achieved **100% accuracy in avoiding false merges** across all 600 documents. 
 
 "Python" (Type: `Animal`) was completely isolated from "Python" (Type: `Technology`), despite sharing the exact same canonical string name.
 

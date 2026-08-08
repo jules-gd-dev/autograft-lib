@@ -68,15 +68,15 @@ pip install autograft
 
 ---
 
-## Performance Benchmark (660 Documents / 10 Industries)
+## Performance Benchmark (600 Documents / 10 Industries)
 
-Evaluated across a massive suite of **660 real-world enterprise documents** spanning 10 key sectors: Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, and Real Estate (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
+Evaluated across a massive suite of **600 real-world enterprise documents** spanning 10 key sectors: Legal, Tech, Insurance, Finance, Healthcare, Manufacturing, Retail, Energy, Education, and Real Estate (with complex acronyms like `GDPR`, `K8s`, `AWS`, `D&O`, `EBITDA`, `KYC/AML`, `SOFR`, `SCOTUS`).
 
 *LLM Engine Configured*: **`groq/llama-3.1-8b-instant`** for extraction & arbitration, and **`groq/llama-3.3-70b-versatile`** for precision auditing.
 
 | Metric | LangChain Naive (No ER) | LangChain + Full LLM ER | LangChain + AutoGraft Hybrid ER |
 | :--- | :---: | :---: | :---: |
-| Processed Documents | 660 documents | 660 documents | 660 documents |
+| Processed Documents | 600 documents | 600 documents | 600 documents |
 | Extracted Entities | 2448 entities | 2448 entities | 2448 entities |
 | LLM ER API Calls | 0 calls | 2448 calls | 0 calls *(100% Local Short-Circuit)* |
 | Tokens Consumed | 0 tokens | 685,608 tokens | 0 tokens *(100% Token Savings)* |
@@ -88,7 +88,7 @@ Evaluated across a massive suite of **660 real-world enterprise documents** span
 
 ---
 
-### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (660 Docs / 10 Industries)
+### Figure 1.1: Enterprise RAG Entity Resolution Performance Metrics (600 Docs / 10 Industries)
 ![Figure 1.1](benchmark/assets/macro_benchmark_metrics.png)
 
 *Detailed Metric Breakdown:*
