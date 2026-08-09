@@ -1,0 +1,31 @@
+name: Bug report
+description: Report something that is broken
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, plus expected vs actual behavior.
+      placeholder: "1. ...\n2. ...\nExpected: ...\nActual: ..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AutoGraft version
+      placeholder: "pip show autograft"
+    validations:
+      required: true
+  - type: input
+    id: integration
+    attributes:
+      label: Integration
+      placeholder: "langchain | llamaindex | core"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      render: shell
