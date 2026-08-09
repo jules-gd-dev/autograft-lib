@@ -1,6 +1,6 @@
 """Real AutoGraft benchmark: streams 500 docs through resolve_entity.
 
-No scaling factors, no hand-crafted vectors. Uses real sentence-transformers
+Fully measured run (no scaling factors, no placeholder vectors). Uses real sentence-transformers
 embeddings, real Groq LLM arbiter calls, real litellm pricing, and measures
 accuracy against the ground-truth corpus.
 """
