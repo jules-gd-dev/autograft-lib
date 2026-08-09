@@ -135,9 +135,13 @@ Linear projection from the measured per-document cost. No exponential assumption
 ```bash
 # Requires: GROQ_API_KEY in .env, sentence-transformers installed
 pip install sentence-transformers
-PYTHONPATH=. python3 benchmark/run_real_benchmark.py      # ~9 min, real API calls
+PYTHONPATH=. python3 benchmark/run_real_benchmark.py      # ~9 min cold / ~1 min warm, real API calls
 PYTHONPATH=. python3 benchmark/utils/real_charts.py        # regenerate charts
 ```
+
+> First run on a fresh machine takes ~9 min (one-time embedding-model download);
+> later runs reuse the local cache and finish in ~1 min. Re-verified 2026-08-09:
+> recall 99.35%, 7 LLM calls, $0.00008 — matches §3 within LLM variance.
 
 Raw per-mention data (name, layer, correctness, latency, tokens) is saved to
 `benchmark/assets/real_benchmark_results.json` (default config) and
