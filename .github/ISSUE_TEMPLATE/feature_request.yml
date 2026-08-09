@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is missing or painful today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would ideally happen instead?
+    validations:
+      required: true
+  - type: input
+    id: integration
+    attributes:
+      label: Integration (if relevant)
+      placeholder: "langchain | llamaindex | core"

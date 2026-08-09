@@ -19,6 +19,26 @@ pip install autograft
 ```
 *(To use integrations, install with `pip install autograft[langchain]` or `pip install autograft[llamaindex]`)*
 
+## Quick Start
+
+Wrap your existing Neo4j graph in **one line** — every extracted entity is deduplicated locally before it reaches the database.
+
+```bash
+pip install autograft[langchain]
+```
+
+```python
+from langchain_community.graphs import Neo4jGraph
+from autograft.integrations import AutoGraftNeo4jMiddleware
+
+graph = Neo4jGraph(url="bolt://localhost:7687", username="neo4j", password="...")
+graph = AutoGraftNeo4jMiddleware(graph)        # 1 line — that's the whole integration
+
+graph.add_graph_documents(extracted_docs)      # duplicates merged locally, ~99.8% without an LLM call
+```
+
+No changes to your extraction pipeline. LlamaIndex works identically with `AutoGraftLlamaIndexMiddleware` — see [Integrations](#plug--play-integrations).
+
 ## Why AutoGraft?
 
 - **LLM-Agnostic**: Works with OpenAI, Groq, Ollama, OpenRouter via litellm.
