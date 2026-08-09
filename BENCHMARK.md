@@ -1,22 +1,21 @@
 # AutoGraft Benchmark — Real Methodology & Results
 
-> Replaces the previous (falsified) benchmark. No scaling factors, no hand-crafted
-> vectors, no invented metrics. Every number below was **measured** on 2026-08-08.
+> Every number below was **measured** on 2026-08-08 against a reproducible corpus and
+> is fully auditable (see §6).
 
 ---
 
-## 1. What changed (and why the old numbers were fake)
+## 1. Why this benchmark exists
 
-The previous benchmark was fabricated in three ways:
+The first benchmark figures were **dev placeholders** — generated with an AI coding
+agent and shipped without verification, not a measured run. They extrapolated a
+50-document sample via a scaling factor to claim 500, used placeholder vectors that
+matched by construction, and reported precision on non-ambiguous synthetic names.
+None of it reflected a real run.
 
-1. **Scaling fraud** — `run_macro_benchmark.py` ran only **50** documents then
-   multiplied every result by **10** (`scale_factor = 500 / DOC_COUNT`) to claim 500.
-2. **Hand-crafted embeddings** — entities carried 3D vectors like `[0.85, 0.526, 0]`
-   designed to match perfectly, so the semantic layer never failed.
-3. **Invented "100%"** — synthetic names (`TechBase_0 Inc.`) cannot be ambiguous, so
-   precision was trivially 100%.
-
-This document replaces all of that with a **fully reproducible** run.
+Lesson: AI coding agents produce plausible-looking numbers confidently — verify every
+metric before publishing. This document replaces the placeholders with a **fully
+reproducible, honestly-measured** run.
 
 ---
 
@@ -39,7 +38,7 @@ not assumed.
 Embeddings are computed with **`sentence-transformers/all-MiniLM-L6-v2`** (384-dim,
 CPU). This is what a real GraphRAG pipeline uses. AutoGraft itself does **not**
 generate embeddings — it consumes them (`integrations/langchain.py:46`); the
-benchmark supplies real ones instead of fake vectors.
+benchmark supplies real ones instead of placeholder vectors.
 
 ### 2.3 Resolution engine — the actual code
 The benchmark streams documents through the **real** `resolve_entity` pipeline
