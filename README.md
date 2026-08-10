@@ -39,6 +39,17 @@ graph.add_graph_documents(extracted_docs)      # duplicates merged locally, ~99.
 
 No changes to your extraction pipeline. LlamaIndex works identically with `AutoGraftLlamaIndexMiddleware` — see [Integrations](#plug--play-integrations).
 
+### 60-Second Demo (no Neo4j, no API key)
+
+See the full 4-layer cascade in 60 seconds — 5 synthetic entities, 0 LLM calls, 0 tokens:
+
+```bash
+pip install autograft
+python examples/demo_60s.py
+```
+
+Or run it in your browser: [Open in Google Colab](https://colab.research.google.com/github/jules-gd-dev/autograft-lib/blob/master/examples/demo_60s.ipynb)
+
 ## Why AutoGraft?
 
 - **LLM-Agnostic**: Works with OpenAI, Groq, Ollama, OpenRouter via litellm.

@@ -41,6 +41,10 @@ all = ["langchain-core", "langchain-community", "llama-index-core", "llama-index
 Homepage = "https://github.com/jules-gd-dev/autograft-lib"
 Repository = "https://github.com/jules-gd-dev/autograft-lib"
 Issues = "https://github.com/jules-gd-dev/autograft-lib/issues"
+Documentation = "https://github.com/jules-gd-dev/autograft-lib/blob/master/README.md"
+Benchmark = "https://github.com/jules-gd-dev/autograft-lib/blob/master/BENCHMARK.md"
+Article = "https://dev.to/jules_gaydonat_8f3aed66/why-graphrag-fails-in-production-and-how-to-fix-entity-duplication-for-0-2g4d"
+Demo = "https://colab.research.google.com/github/jules-gd-dev/autograft-lib/blob/master/examples/demo_60s.ipynb"
 
 [tool.setuptools.packages.find]
 include = ["autograft", "autograft.*"]

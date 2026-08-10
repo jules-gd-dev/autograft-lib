@@ -13,12 +13,15 @@ autograft/api/main.py
 autograft/core/__init__.py
 autograft/core/resolver.py
 autograft/db/__init__.py
+autograft/db/client.py
 autograft/db/neo4j_generator.py
 autograft/integrations/__init__.py
+autograft/integrations/base.py
 autograft/integrations/langchain.py
 autograft/integrations/llamaindex.py
 autograft/layers/__init__.py
 autograft/layers/deterministic.py
+autograft/layers/lexical.py
 autograft/layers/llm_arbiter.py
 autograft/layers/semantic.py
 autograft/models/__init__.py
@@ -26,7 +29,9 @@ autograft/models/entities.py
 tests/test_api.py
 tests/test_config.py
 tests/test_deterministic.py
-tests/test_integrations.py
+tests/test_langchain.py
+tests/test_lexical.py
+tests/test_llamaindex.py
 tests/test_llm_arbiter.py
 tests/test_neo4j_generator.py
 tests/test_resolver.py
