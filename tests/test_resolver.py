@@ -120,3 +120,28 @@ def test_resolver_no_match() -> None:
     assert result.is_match is False
     assert result.matched_node_id is None
     assert result.new_alias is None
+
+
+@patch("autograft.core.resolver.arbitrate_match")
+def test_resolver_enable_arbiter_false_skips_layer_3(mock_arbitrate) -> None:
+    """Test enable_arbiter=False short-circuits the LLM arbiter on uncertain hits."""
+    new_entity = Entity(
+        canonical_name="Apple Corp", type="Company", embedding=[1.0, 0.0, 0.0]
+    )
+    existing_nodes = [
+        ExistingNode(
+            node_id="node_uncertain",
+            canonical_name="Pear Inc.",
+            type="Company",
+            embedding=[0.8, 0.6, 0.0],
+        )
+    ]
+
+    result = resolve_entity(
+        new_entity, existing_nodes, enable_arbiter=False
+    )
+
+    assert result.is_match is False
+    assert result.layer == "semantic_uncertain"
+    assert result.matched_node_id == "node_uncertain"
+    mock_arbitrate.assert_not_called()
