@@ -137,9 +137,7 @@ def test_resolver_enable_arbiter_false_skips_layer_3(mock_arbitrate) -> None:
         )
     ]
 
-    result = resolve_entity(
-        new_entity, existing_nodes, enable_arbiter=False
-    )
+    result = resolve_entity(new_entity, existing_nodes, enable_arbiter=False)
 
     assert result.is_match is False
     assert result.layer == "semantic_uncertain"

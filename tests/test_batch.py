@@ -36,7 +36,9 @@ def _corpus() -> list[Entity]:
             type="Organization",
             embedding=APPLE_EMB,
         ),
-        Entity(canonical_name="Python", type="ProgrammingLanguage", embedding=APPLE_EMB),
+        Entity(
+            canonical_name="Python", type="ProgrammingLanguage", embedding=APPLE_EMB
+        ),
         Entity(canonical_name="Python", type="Animal", embedding=APPLE_EMB),
     ]
 
@@ -52,7 +54,9 @@ def test_empty_batch() -> None:
 
 def test_single_entity_matches_graph() -> None:
     """Single entity resolving to a graph node in Pass 2."""
-    entity = Entity(canonical_name="Apple Inc.", type="Organization", embedding=APPLE_EMB)
+    entity = Entity(
+        canonical_name="Apple Inc.", type="Organization", embedding=APPLE_EMB
+    )
     result = resolve_batch([entity], db_client=_graph())
     assert len(result.results) == 1
     assert result.results[0].is_match is True
@@ -88,7 +92,9 @@ def test_intra_batch_dedup_before_graph() -> None:
 
 def test_type_gate_isolates_homonyms() -> None:
     """Same name, different types stay in separate clusters."""
-    lang = Entity(canonical_name="Python", type="ProgrammingLanguage", embedding=APPLE_EMB)
+    lang = Entity(
+        canonical_name="Python", type="ProgrammingLanguage", embedding=APPLE_EMB
+    )
     animal = Entity(canonical_name="Python", type="Animal", embedding=APPLE_EMB)
     result = resolve_batch([lang, animal], db_client=_graph())
     assert result.report.cluster_count == 2
