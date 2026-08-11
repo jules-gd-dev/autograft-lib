@@ -18,8 +18,13 @@ def resolve_entity(
     model: str | None = None,
     api_key: str | None = None,
     api_base: str | None = None,
+    enable_arbiter: bool = True,
 ) -> MatchResult:
-    """Orchestrates the multi-layer ER pipeline to determine an entity match."""
+    """Orchestrates the multi-layer ER pipeline to determine an entity match.
+
+    `enable_arbiter=False` short-circuits Layer 3 (LLM) for 0-token resolution;
+    ambiguous semantic results then surface as `semantic_uncertain` no-matches.
+    """
     if isinstance(db_client, list):
         db_client = ListDatabaseClient(db_client)
 
@@ -71,6 +76,8 @@ def resolve_entity(
         semantic_result.layer == "semantic_uncertain"
         and semantic_result.matched_node_id is not None
     ):
+        if not enable_arbiter:
+            return semantic_result
         matched_node = next(
             (
                 n
