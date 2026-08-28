@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from autograft.config import AutoGraftConfig
+from autograft.db.cypher import quote_label
 from autograft.models.entities import Entity, ExistingNode
 
 logger = logging.getLogger(__name__)
@@ -44,8 +45,8 @@ class BaseGraphMiddleware(ABC):
         self._node_cache[index_name] = True
         try:
             query = f"""
-            CREATE VECTOR INDEX `{index_name}` IF NOT EXISTS
-            FOR (n:`{label}`) ON (n.{self.config.embedding_attr})
+            CREATE VECTOR INDEX {quote_label(index_name)} IF NOT EXISTS
+            FOR (n:{quote_label(label)}) ON (n.{self.config.embedding_attr})
             OPTIONS {{indexConfig: {{
                 `vector.dimensions`: {self.config.embedding_dimension},
                 `vector.similarity_function`: 'cosine'
@@ -58,7 +59,7 @@ class BaseGraphMiddleware(ABC):
     def find_exact_candidates(self, entity: Entity) -> list[ExistingNode]:
         """Queries Neo4j for nodes matching the entity type to perform deterministic match."""
         query = f"""
-        MATCH (n:`{entity.type}`)
+        MATCH (n:{quote_label(entity.type)})
         WHERE n.{self.config.id_attr} = $name OR $name IN n.{self.config.aliases_attr}
         RETURN n.{self.config.id_attr} AS id, n.{self.config.aliases_attr} AS aliases
         LIMIT 100
@@ -79,19 +80,18 @@ class BaseGraphMiddleware(ABC):
                     )
             return nodes
         except Exception as e:  # noqa: BLE001
-            logger.debug(f"Query for exact candidates failed: {e}")
+            logger.warning(
+                f"Exact-candidate query failed for '{entity.canonical_name}' "
+                f"(db unreachable? failing open, entity will be treated as new): {e}"
+            )
             return []
 
     def persist_alias(self, node_id: str, alias: str | None) -> None:
-        """Best-effort append of the incoming name to the matched node's aliases (V2).
-
-        Mirrors production MERGE so later repeats of the same surface name are
-        caught by Layer 1 deterministically instead of re-escalating to the LLM.
-        """
+        """Best-effort append of the incoming name to the matched node's aliases
+        so later repeats hit Layer 1 deterministically instead of the LLM."""
         if not alias:
             return
-        id_attr = self.config.id_attr
-        aliases_attr = self.config.aliases_attr
+        id_attr, aliases_attr = self.config.id_attr, self.config.aliases_attr
         query = (
             f"MATCH (n) WHERE n.{id_attr} = $id "
             f"SET n.{aliases_attr} = CASE WHEN $alias IN coalesce(n.{aliases_attr}, []) "
@@ -141,7 +141,8 @@ class BaseGraphMiddleware(ABC):
                     )
             return nodes
         except Exception as e:  # noqa: BLE001
-            logger.debug(
-                f"Vector search failed for {entity.type} (index might be missing): {e}"
+            logger.warning(
+                f"Vector search failed for {entity.type} (index might be missing, "
+                f"failing open to no candidates): {e}"
             )
             return []
