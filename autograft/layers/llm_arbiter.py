@@ -1,5 +1,6 @@
 """Layer 3: LLM Arbitration for ambiguous entity resolution cases using LiteLLM."""
 
+import re
 import time
 
 import litellm
@@ -9,6 +10,19 @@ from autograft.config import AutoGraftConfig
 from autograft.models.entities import Entity, ExistingNode, MatchResult
 
 load_dotenv()
+
+# A NO/NON token vetoes the merge first, so free-form answers like "NO MATCH"
+# can never be read as positive. Anything without an explicit YES/OUI declines.
+_NEGATIVE_TOKEN = re.compile(r"\b(?:NO|NON)\b")
+_POSITIVE_TOKEN = re.compile(r"\b(?:YES|OUI)\b")
+
+
+def _parse_verdict(response_text: str) -> bool:
+    """Merge only on an explicit YES/OUI token; any NO/NON token vetoes."""
+    upper = response_text.strip().upper()
+    if _NEGATIVE_TOKEN.search(upper):
+        return False
+    return bool(_POSITIVE_TOKEN.search(upper))
 
 
 def _ask_llm(
@@ -89,8 +103,7 @@ def arbitrate_match(
         else:
             response_text, tokens_used = str(res), 0
 
-        upper_res = response_text.strip().upper()
-        is_match = "YES" in upper_res or "OUI" in upper_res or "MATCH" in upper_res
+        is_match = _parse_verdict(response_text)
 
         if is_match:
             return MatchResult(
