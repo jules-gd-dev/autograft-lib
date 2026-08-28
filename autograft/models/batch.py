@@ -22,3 +22,6 @@ class BatchResult(BaseModel):
 
     results: list[MatchResult] = []
     report: ResolutionReport = ResolutionReport()
+    # Cluster representative id per input (aligned with `results`): same value
+    # means the inputs were intra-batch duplicates of one another.
+    rep_node_ids: list[str] = []

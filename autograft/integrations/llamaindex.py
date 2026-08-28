@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Any
 
 from autograft.config import AutoGraftConfig
-from autograft.core.resolver import resolve_entity
+from autograft.core.batch import resolve_batch
 from autograft.integrations.base import BaseGraphMiddleware
 from autograft.models.entities import Entity
 
@@ -37,24 +37,38 @@ class AutoGraftLlamaIndexMiddleware(BaseGraphMiddleware):
         return results
 
     def upsert_nodes(self, nodes: list[EntityNode]) -> None:
-        """Intercepts, deduplicates, and passes nodes to LlamaIndex's store."""
+        """Intercepts, deduplicates, and passes nodes to LlamaIndex's store.
+
+        Nodes are resolved through resolve_batch so variants inside the same
+        upsert are merged with each other before anything is written: the store
+        only sees cluster representatives, never raw per-node duplicates.
+        """
+        entities = []
         for node in nodes:
             embedding = None
             if hasattr(node, "properties") and isinstance(node.properties, dict):
                 embedding = node.properties.get(self.config.embedding_attr)
-
-            entity = Entity(
-                canonical_name=str(node.name),
-                type=str(node.label),
-                embedding=embedding,
-            )
-            match_result = resolve_entity(entity, db_client=self, config=self.config)
-
-            if match_result.is_match:
-                node.name = str(match_result.matched_node_id)
-                self.persist_alias(
-                    str(match_result.matched_node_id), match_result.new_alias
+            entities.append(
+                Entity(
+                    canonical_name=str(node.name),
+                    type=str(node.label),
+                    embedding=embedding,
                 )
+            )
+
+        batch = resolve_batch(entities, db_client=self, config=self.config)
+        new_cluster_names: dict[str, str] = {}
+        for node, res, rep_id in zip(nodes, batch.results, batch.rep_node_ids):
+            original = str(node.name)
+            if res.is_match and res.matched_node_id:
+                node.name = str(res.matched_node_id)
+                self.persist_alias(str(res.matched_node_id), original)
+            else:
+                # New node: collapse intra-batch variants onto their rep so
+                # only one node is created per cluster.
+                canonical = new_cluster_names.setdefault(rep_id, original)
+                if original != canonical:
+                    node.name = canonical
 
         self.store.upsert_nodes(nodes)
 

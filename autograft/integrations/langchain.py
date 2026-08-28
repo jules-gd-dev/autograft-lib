@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Any
 
 from autograft.config import AutoGraftConfig
-from autograft.core.resolver import resolve_entity
+from autograft.core.batch import resolve_batch
 from autograft.integrations.base import BaseGraphMiddleware
 from autograft.models.entities import Entity
 
@@ -37,31 +37,43 @@ class AutoGraftNeo4jMiddleware(BaseGraphMiddleware):
     def add_graph_documents(
         self, graph_documents: list[GraphDocument], **kwargs: Any
     ) -> None:
-        """Intercepts, deduplicates, and passes documents to LangChain's Neo4jGraph."""
-        for doc in graph_documents:
-            id_mapping = {}
+        """Intercepts, deduplicates, and passes documents to LangChain's Neo4jGraph.
 
-            # 1. Resolve Nodes
+        Documents are resolved through resolve_batch so variants inside the same
+        document are merged with each other before anything is written: the graph
+        only sees cluster representatives, never raw per-node duplicates.
+        """
+        for doc in graph_documents:
+            entities = []
             for node in doc.nodes:
-                # Extract embedding from properties if it exists
                 embedding = None
                 if hasattr(node, "properties") and isinstance(node.properties, dict):
                     embedding = node.properties.get(self.config.embedding_attr)
-
-                entity = Entity(
-                    canonical_name=str(node.id),
-                    type=str(node.type),
-                    embedding=embedding,
-                )
-                match_result = resolve_entity(
-                    entity, db_client=self, config=self.config
+                entities.append(
+                    Entity(
+                        canonical_name=str(node.id),
+                        type=str(node.type),
+                        embedding=embedding,
+                    )
                 )
 
-                if match_result.is_match:
-                    matched_id = str(match_result.matched_node_id)
-                    id_mapping[node.id] = matched_id
+            batch = resolve_batch(entities, db_client=self, config=self.config)
+            id_mapping: dict[Any, Any] = {}
+            new_cluster_ids: dict[str, Any] = {}
+            for node, res, rep_id in zip(doc.nodes, batch.results, batch.rep_node_ids):
+                original = node.id
+                if res.is_match and res.matched_node_id:
+                    matched_id = str(res.matched_node_id)
+                    id_mapping[original] = matched_id
                     node.id = matched_id
-                    self.persist_alias(matched_id, match_result.new_alias)
+                    self.persist_alias(matched_id, str(original))
+                else:
+                    # New node: collapse intra-batch variants onto their rep so
+                    # only one node is created per cluster.
+                    canonical = new_cluster_ids.setdefault(rep_id, original)
+                    if original != canonical:
+                        id_mapping[original] = canonical
+                        node.id = canonical
 
             # 2. Remap Relationships
             for rel in doc.relationships:
