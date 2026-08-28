@@ -104,4 +104,4 @@ def resolve_batch(
         new_nodes=new_nodes,
         total_tokens=total_tokens,
     )
-    return BatchResult(results=results, report=report)
+    return BatchResult(results=results, report=report, rep_node_ids=list(cluster_of))
