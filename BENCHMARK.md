@@ -42,8 +42,24 @@ benchmark supplies real ones instead of placeholder vectors.
 
 ### 2.3 Resolution engine — the actual code
 The benchmark streams documents through the **real** `resolve_entity` pipeline
-(`autograft/core/resolver.py`) backed by an in-memory `ListDatabaseClient`. This is
-the same ER engine the Neo4j middleware uses, minus the database round-trip.
+(`autograft/core/resolver.py`) backed by an in-memory `ListDatabaseClient`. The
+ER engine, thresholds, and arbiter prompt are the ones the Neo4j middleware
+uses, but candidate sourcing and visibility differ from the production path:
+
+- **Candidates:** the in-memory client exposes every same-type node to
+  Layers 1–1.5, so suffix/acronym detection sees all nodes. In Neo4j,
+  `find_exact_candidates` only returns exact id/alias hits; a variant not yet
+  persisted as an alias escalates to the semantic layer or the LLM arbiter
+  instead of being caught by the lexical layer.
+- **Visibility:** each resolved mention is added to the in-memory store
+  immediately, so later mentions (same document or later documents) match it
+  via Layer 1. The integrations resolve each document through `resolve_batch()`
+  (intra-batch clustering before writing), which closes the intra-document gap
+  while keeping per-document granularity.
+
+The measured LLM-call share is therefore a **favorable bound** for the Neo4j
+path, not a guarantee — production graphs converge toward it as
+`persist_alias` accumulates surface names.
 
 ### 2.4 LLM & pricing — real calls, real prices
 - **Arbiter model:** `groq/llama-3.1-8b-instant` (Layer 3 only).

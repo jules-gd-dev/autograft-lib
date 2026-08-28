@@ -78,6 +78,16 @@ symbols, homonyms). No scaling factors — the full 500-doc run was executed.
 (`groq/llama-3.1-8b-instant`), real `litellm` pricing. Accuracy measured against a
 ground-truth corpus. See [BENCHMARK.md](BENCHMARK.md) for full details.
 
+> **Scope of these figures:** the benchmark runs the ER engine on an in-memory
+> store that exposes *every* same-type node to the local layers and makes each
+> resolved mention immediately visible to the next. The Neo4j integrations
+> instead query the graph for candidates (exact id/alias hits for Layers 1–1.5,
+> the vector index for Layer 2) and resolve each document through
+> `resolve_batch()` before writing. Depending on how many aliases are already
+> persisted on your nodes, production may escalate more mentions to the LLM
+> arbiter than shown here — treat the LLM-call share as a favorable bound, not
+> a guarantee.
+
 | Metric | Naive (no ER) | Full LLM ER | AutoGraft (hybrid) |
 | :--- | ---: | ---: | ---: |
 | Entity mentions | 3000 | 3000 | 3000 |
